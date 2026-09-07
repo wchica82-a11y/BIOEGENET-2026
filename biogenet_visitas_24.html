@@ -2184,7 +2184,7 @@ async function validateRepAccess(rep) {
 // ═══════════════════════════════════════════════════════════
 // SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION = '2026-09-02-140000';
+const APP_VERSION = '2026-09-02-142000';
 
 async function checkForUpdates() {
   try {
@@ -3812,11 +3812,21 @@ async function eliminarCampana(id){
     renderGerMarketing();
   } catch(e){ alert('Error: '+e.message); }
 }
-function exportMarketingExcel(campId){
+function _loadXLSXLib(){
+  return new Promise(function(resolve, reject){
+    if (typeof XLSX !== 'undefined') return resolve();
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = function(){ resolve(); };
+    s.onerror = function(){ reject(new Error('No se pudo cargar la librería XLSX. Verifica tu conexión a internet.')); };
+    document.head.appendChild(s);
+  });
+}
+async function exportMarketingExcel(campId){
   var c = MARKETING_CAMPANAS.find(function(x){ return x.id === campId; });
   var asigs = (MARKETING_ASIGNACIONES||[]).filter(function(a){ return a.campana_id === campId; });
   if (!asigs.length){ alert('Sin asignaciones en esta campaña.'); return; }
-  if (typeof XLSX === 'undefined'){ alert('Librería XLSX no cargada.'); return; }
+  try { await _loadXLSXLib(); } catch(e){ alert(e.message); return; }
   var rows = asigs.map(function(a){
     return {
       Campaña: c?c.nombre:'',
@@ -4128,12 +4138,41 @@ function renderObsequiosCard(){
   listEl.innerHTML = pends.map(function(a){
     var camp = MARKETING_CAMPANAS.find(function(c){ return c.id === a.campana_id; });
     var nombre = camp ? camp.nombre : ('Campaña #'+a.campana_id);
-    return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E9D5FF;border-radius:8px;background:#fff;margin-bottom:6px;cursor:pointer">'
-      + '<input type="checkbox" class="obseq-check" data-asig-id="'+a.id+'" style="width:20px;height:20px;accent-color:#8B5CF6;flex-shrink:0">'
-      + '<div style="flex:1"><div style="font-size:13.5px;font-weight:700;color:#8B5CF6">🎁 '+esc_(nombre)+'</div>'
+    var rowId = 'obseq-row-'+a.id;
+    return '<div id="'+rowId+'" onclick="toggleObsequio('+a.id+')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:2px solid #E9D5FF;border-radius:10px;background:#fff;margin-bottom:8px;cursor:pointer;transition:all .15s">'
+      + '<div class="obseq-box" style="width:28px;height:28px;border:2px solid #8B5CF6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s"><span class="obseq-check-mark" style="display:none;color:#fff;font-size:20px;font-weight:900;line-height:1">✓</span></div>'
+      + '<input type="checkbox" class="obseq-check" data-asig-id="'+a.id+'" style="display:none">'
+      + '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#8B5CF6">🎁 '+esc_(nombre)+'</div>'
       +   (camp && camp.descripcion ? '<div style="font-size:11.5px;color:var(--t3);margin-top:2px">'+esc_(camp.descripcion)+'</div>' : '')
-      + '</div></label>';
+      +   '<div class="obseq-status" style="font-size:11.5px;color:var(--t3);margin-top:3px;font-weight:600">Toca para marcar como entregado</div>'
+      + '</div>'
+      + '</div>';
   }).join('');
+}
+function toggleObsequio(asigId){
+  var row = document.getElementById('obseq-row-'+asigId);
+  if (!row) return;
+  var cb = row.querySelector('.obseq-check');
+  var box = row.querySelector('.obseq-box');
+  var mark = row.querySelector('.obseq-check-mark');
+  var status = row.querySelector('.obseq-status');
+  if (!cb || !box || !mark) return;
+  cb.checked = !cb.checked;
+  if (cb.checked){
+    row.style.background = '#F0FDF4';
+    row.style.borderColor = '#1A5C3A';
+    box.style.background = '#1A5C3A';
+    box.style.borderColor = '#1A5C3A';
+    mark.style.display = 'inline-block';
+    if (status){ status.textContent = '✅ Marcado — se registrará como entregado al guardar la visita'; status.style.color = '#1A5C3A'; }
+  } else {
+    row.style.background = '#fff';
+    row.style.borderColor = '#E9D5FF';
+    box.style.background = '#fff';
+    box.style.borderColor = '#8B5CF6';
+    mark.style.display = 'none';
+    if (status){ status.textContent = 'Toca para marcar como entregado'; status.style.color = 'var(--t3)'; }
+  }
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#t-reg .card')) document.getElementById('dlist').classList.remove('open'); });
 
