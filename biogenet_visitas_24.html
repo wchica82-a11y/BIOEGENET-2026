@@ -329,11 +329,11 @@ textarea{resize:none;height:88px;line-height:1.5}
         <div id="prod-chips"></div>
       </div>
 
-      <div class="card" id="card-material">
-        <div class="ctitle">Entrega de material promocional</div>
-        <p style="font-size:12px;color:var(--t3);margin-bottom:.75rem">Marca los materiales entregados y ajusta la cantidad. Por defecto: 1.</p>
-        <div id="mat-rows"></div>
-        <div id="mat-empty" style="font-size:13px;color:var(--t3);display:none">No hay materiales registrados. El gerente puede agregarlos en la sección Ciclo → Materiales promocionales.</div>
+      <!-- Sustituye el bloque de material promocional. Solo aparece si el médico seleccionado tiene obsequios pendientes en campañas activas. -->
+      <div class="card" id="card-obsequios" style="display:none;border:1px solid #8B5CF6;background:#FAF5FF">
+        <div class="ctitle">🎁 Obsequios de campaña</div>
+        <p style="font-size:12px;color:var(--t2);margin-bottom:.6rem">Este médico está en las siguientes campañas activas. Marca los obsequios que le vas a entregar en esta visita.</p>
+        <div id="obseq-list"></div>
       </div>
 
 
@@ -503,17 +503,98 @@ textarea{resize:none;height:88px;line-height:1.5}
 
     <!-- PANELES (rep): médicos + farmacias con GPS -->
     <div id="t-pnl" class="panel">
-      <div class="card">
-        <div class="ctitle">📋 Mis paneles</div>
-        <p style="font-size:12px;color:var(--t3);margin-bottom:.7rem">Listado de tus médicos y farmacias. Toca el botón 📍 al lado de cada uno para abrir su ubicación en Google Maps.</p>
-        <div style="display:flex;gap:8px;margin-bottom:.7rem">
-          <button id="pnl-btn-med" onclick="pnlSwitch('medicos')" style="flex:1;padding:11px;border-radius:9px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:13.5px;cursor:pointer;font-family:var(--f)">👨‍⚕️ Médicos</button>
-          <button id="pnl-btn-farm" onclick="pnlSwitch('farmacias')" style="flex:1;padding:11px;border-radius:9px;border:1px solid #cbd5d0;background:#fff;color:var(--t2);font-weight:700;font-size:13.5px;cursor:pointer;font-family:var(--f)">🏪 Farmacias</button>
-        </div>
-        <input type="text" id="pnl-search" placeholder="Buscar por nombre, ciudad o especialidad..." oninput="renderPanelList()" style="width:100%;padding:9px 11px;border:1px solid #cbd5d0;border-radius:8px;font-family:var(--f);font-size:13px;margin-bottom:.5rem">
-        <div id="pnl-info" style="font-size:11.5px;color:var(--t3);margin-bottom:.5rem"></div>
+      <!-- Toggle vista: Panel de trabajo | Marketing -->
+      <div style="display:flex;gap:8px;margin-bottom:.75rem">
+        <button id="pnl-view-trabajo" onclick="switchPnlView('trabajo')" style="flex:1;padding:11px;border-radius:9px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:var(--f)">📋 Panel de trabajo</button>
+        <button id="pnl-view-mkt" onclick="switchPnlView('marketing')" style="flex:1;padding:11px;border-radius:9px;border:1px solid #cbd5d0;background:#fff;color:var(--t2);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--f)">🎁 Marketing</button>
       </div>
-      <div id="pnl-list"></div>
+
+      <!-- VISTA: Panel de trabajo (médicos + farmacias, GPS, solicitudes) -->
+      <div id="pnl-view-trabajo-wrap">
+        <div class="card">
+          <div class="ctitle">📋 Mis paneles</div>
+          <p style="font-size:12px;color:var(--t3);margin-bottom:.7rem">Listado de tus médicos y farmacias. Toca el botón 📍 al lado de cada uno para abrir su ubicación en Google Maps.</p>
+          <div style="display:flex;gap:8px;margin-bottom:.7rem">
+            <button id="pnl-btn-med" onclick="pnlSwitch('medicos')" style="flex:1;padding:11px;border-radius:9px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:13.5px;cursor:pointer;font-family:var(--f)">👨‍⚕️ Médicos</button>
+            <button id="pnl-btn-farm" onclick="pnlSwitch('farmacias')" style="flex:1;padding:11px;border-radius:9px;border:1px solid #cbd5d0;background:#fff;color:var(--t2);font-weight:700;font-size:13.5px;cursor:pointer;font-family:var(--f)">🏪 Farmacias</button>
+          </div>
+          <input type="text" id="pnl-search" placeholder="Buscar por nombre, ciudad o especialidad..." oninput="renderPanelList()" style="width:100%;padding:9px 11px;border:1px solid #cbd5d0;border-radius:8px;font-family:var(--f);font-size:13px;margin-bottom:.5rem">
+          <div id="pnl-info" style="font-size:11.5px;color:var(--t3);margin-bottom:.5rem"></div>
+          <button id="pnl-btn-alta" onclick="openSolicitudAlta()" style="width:100%;padding:10px;border-radius:8px;border:1px dashed #1A5C3A;background:#F0F7F2;color:#1A5C3A;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)">➕ Solicitar alta de nuevo médico</button>
+          <button id="pnl-btn-alta-farm" onclick="openSolicitudAltaFarm()" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px dashed #1565C0;background:#EAF2FB;color:#1565C0;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)">➕ Solicitar alta de nueva farmacia</button>
+        </div>
+        <div class="card" id="pnl-solicitudes-card" style="padding:11px 13px">
+          <div style="font-size:12px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px">📋 Solicitudes de panel</div>
+          <div id="pnl-solicitudes"></div>
+        </div>
+        <div class="card" id="pnl-farm-solicitudes-card" style="padding:11px 13px;display:none">
+          <div style="font-size:12px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px">📋 Mis solicitudes de farmacias</div>
+          <div id="pnl-farm-solicitudes"></div>
+        </div>
+        <div id="pnl-list"></div>
+      </div>
+
+      <!-- VISTA: Marketing (selección de médicos por campaña) -->
+      <div id="pnl-view-mkt-wrap" style="display:none">
+        <div class="card">
+          <div class="ctitle">🎁 Campañas de obsequios</div>
+          <p style="font-size:12px;color:var(--t3);margin-bottom:.7rem">Elige una campaña activa y marca los médicos a los que planeas entregar el obsequio. Al registrar la visita del médico seleccionado, un checkbox en Registro te permitirá marcarlo como entregado.</p>
+          <select id="mkt-camp-sel" onchange="onMktCampChange(this.value)" style="width:100%;padding:10px;border:1px solid #cbd5d0;border-radius:8px;font-family:var(--f);font-size:13px;margin-bottom:.6rem"></select>
+          <input type="text" id="mkt-search" placeholder="Buscar médico por nombre, ciudad o especialidad..." oninput="renderMarketingList()" style="width:100%;padding:9px 11px;border:1px solid #cbd5d0;border-radius:8px;font-family:var(--f);font-size:13px;margin-bottom:.5rem">
+          <div id="mkt-info" style="font-size:11.5px;color:var(--t3)"></div>
+        </div>
+        <div id="mkt-list"></div>
+      </div>
+    </div>
+
+    <!-- Modal Solicitar alta farmacia -->
+    <div id="modal-alta-farm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:1rem">
+      <div style="background:#fff;border-radius:12px;padding:1.1rem;max-width:440px;width:100%;max-height:90vh;overflow:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem">
+          <h3 style="font-size:16px;font-weight:700;color:#1565C0;margin:0">➕ Solicitar alta de farmacia</h3>
+          <button onclick="closeSolicitudAltaFarm()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666">&times;</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--t3);margin-bottom:.7rem">Completa los datos. La solicitud va directo al gerente para aprobación.</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input id="saf-cod" placeholder="Código de la farmacia * (ej: FG136, BPG25)" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="saf-pdv" placeholder="Nombre del PDV * (ej: FYBECA URDESA)" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="saf-cadena" placeholder="Cadena (ej: FYBECA, PHARMACYS, INDEPENDIENTE)" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="saf-ciudad" placeholder="Ciudad" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="saf-dir" placeholder="Dirección" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="saf-zona" placeholder="Zona (opcional)" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <textarea id="saf-motivo" placeholder="Motivo del alta (opcional)" rows="2" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:.9rem">
+          <button onclick="closeSolicitudAltaFarm()" style="flex:1;padding:10px;border-radius:7px;border:1px solid #cbd5d0;background:#fff;color:var(--t2);font-weight:700;cursor:pointer;font-family:var(--f)">Cancelar</button>
+          <button onclick="submitSolicitudAltaFarm()" style="flex:1;padding:10px;border-radius:7px;border:1px solid #1565C0;background:#1565C0;color:#fff;font-weight:700;cursor:pointer;font-family:var(--f)">Enviar solicitud</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Solicitar alta -->
+    <div id="modal-alta-med" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:1rem">
+      <div style="background:#fff;border-radius:12px;padding:1.1rem;max-width:440px;width:100%;max-height:90vh;overflow:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem">
+          <h3 style="font-size:16px;font-weight:700;color:#1A5C3A;margin:0">➕ Solicitar alta de médico</h3>
+          <button onclick="closeSolicitudAlta()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666">&times;</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--t3);margin-bottom:.7rem">Completa los datos. La solicitud pasa primero a tu compañero para confirmar, luego al gerente para aprobación final.</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input id="sa-nombre" placeholder="Nombre completo del médico *" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="sa-esp" placeholder="Especialidad" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="sa-ciudad" placeholder="Ciudad" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="sa-dir" placeholder="Dirección" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <select id="sa-tipo" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+            <option value="CIU">Ciudad (CIU)</option>
+            <option value="GIR">Gira (GIR)</option>
+          </select>
+          <textarea id="sa-motivo" placeholder="Motivo del alta (opcional)" rows="2" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:.9rem">
+          <button onclick="closeSolicitudAlta()" style="flex:1;padding:10px;border-radius:7px;border:1px solid #cbd5d0;background:#fff;color:var(--t2);font-weight:700;cursor:pointer;font-family:var(--f)">Cancelar</button>
+          <button onclick="submitSolicitudAlta()" style="flex:1;padding:10px;border-radius:7px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;cursor:pointer;font-family:var(--f)">Enviar solicitud</button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -561,6 +642,15 @@ textarea{resize:none;height:88px;line-height:1.5}
     </div>
     <div class="tab" data-tab="g-delauth" onclick="swTab(this,'ger-tabs','s-ger')">
       <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M6 6v14a2 2 0 002 2h8a2 2 0 002-2V6"/></svg>Cambios
+    </div>
+    <div class="tab" data-tab="g-solic" onclick="swTab(this,'ger-tabs','s-ger')" style="position:relative">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Solicitudes<span id="solic-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#C0392B;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;line-height:18px;border-radius:9px;padding:0 5px;box-shadow:0 1px 3px rgba(0,0,0,.3)"></span>
+    </div>
+    <div class="tab" data-tab="g-pares" onclick="swTab(this,'ger-tabs','s-ger')">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Pares
+    </div>
+    <div class="tab" data-tab="g-mkt" onclick="swTab(this,'ger-tabs','s-ger')">
+      <svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9"/><path d="M22 7H2v5h20V7z"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>Marketing
     </div>
     <div class="tab" data-tab="g-ciclo" onclick="swTab(this,'ger-tabs','s-ger')">
       <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Ciclo
@@ -881,6 +971,71 @@ textarea{resize:none;height:88px;line-height:1.5}
         <button class="btn btn-p" onclick="renderDelAuth()" style="width:auto;padding:9px 16px">🔍 Buscar visitas</button>
       </div>
       <div id="delauth-list" style="margin-top:8px"></div>
+    </div>
+
+    <!-- SOLICITUDES DE PANEL (alta/baja médicos y farmacias) -->
+    <div id="g-solic" class="panel">
+      <div class="card">
+        <div class="ctitle">📋 Solicitudes de cambios de panel</div>
+        <p style="font-size:12px;color:var(--t3);margin-bottom:.7rem">Cambios propuestos por los representantes. <b>Médicos:</b> ya confirmados por el compañero. <b>Farmacias:</b> directo del rep (cada farmacia es responsabilidad única). Al aprobar, el cambio se aplica en vivo en todos los iPads.</p>
+        <div style="display:flex;gap:8px;margin-bottom:.7rem">
+          <button id="gs-tab-med" onclick="switchSolicTipo('medicos')" style="flex:1;padding:9px;border-radius:7px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)">👨‍⚕️ Médicos</button>
+          <button id="gs-tab-farm" onclick="switchSolicTipo('farmacias')" style="flex:1;padding:9px;border-radius:7px;border:1px solid #1565C0;background:#EAF2FB;color:#1565C0;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)">🏪 Farmacias</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:.7rem">
+          <button onclick="_solicRefresh()" style="padding:8px 12px;border-radius:7px;border:1px solid #1A5C3A;background:#fff;color:#1A5C3A;font-weight:700;font-size:12px;cursor:pointer;font-family:var(--f)">🔄 Refrescar</button>
+          <select id="gs-filter" onchange="renderGerSolicitudes()" style="padding:8px 10px;border-radius:7px;border:1px solid #cbd5d0;font-family:var(--f);font-size:12px">
+            <option value="pendiente_gerente" selected>Pendientes de mi aprobación</option>
+            <option value="pendiente_companero">Pendientes de compañero (solo médicos)</option>
+            <option value="aprobada">Aprobadas</option>
+            <option value="rechazada">Rechazadas</option>
+            <option value="">Todas</option>
+          </select>
+        </div>
+      </div>
+      <div id="ger-solic-list"></div>
+    </div>
+
+    <!-- MARKETING: campañas de obsequios -->
+    <div id="g-mkt" class="panel">
+      <div class="card">
+        <div class="ctitle">🎁 Crear nueva campaña de obsequios</div>
+        <p style="font-size:12px;color:var(--t3);margin-bottom:.7rem">Define una campaña (ej: "Órganos Diciembre 2026"). Los reps podrán seleccionar médicos y marcar entregas al registrar visitas.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:8px">
+          <input id="mkt-nombre" placeholder="Nombre de la campaña *" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="mkt-cant" type="number" placeholder="Cantidad total (opcional)" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="mkt-ini" type="date" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="mkt-fin" type="date" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+        </div>
+        <textarea id="mkt-desc" placeholder="Descripción (opcional)" rows="2" style="width:100%;padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px;resize:vertical;margin-bottom:8px"></textarea>
+        <button onclick="crearCampana()" style="padding:10px 16px;border-radius:7px;border:1px solid #8B5CF6;background:#8B5CF6;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:var(--f)">➕ Crear campaña</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:.5rem .2rem">
+        <div style="font-size:13px;font-weight:700;color:var(--t2)">Campañas</div>
+        <button onclick="initGerMarketing()" style="padding:6px 12px;border-radius:6px;border:1px solid #1A5C3A;background:#fff;color:#1A5C3A;font-weight:700;font-size:11.5px;cursor:pointer;font-family:var(--f)">🔄 Refrescar</button>
+      </div>
+      <div id="ger-mkt-list"></div>
+    </div>
+
+    <!-- PARES DE REPS -->
+    <div id="g-pares" class="panel">
+      <div class="card">
+        <div class="ctitle">👥 Pares de representantes (compañeros)</div>
+        <p style="font-size:12px;color:var(--t3);margin-bottom:.7rem">Define quién es el compañero de cada rep. Se usa para el flujo de altas/bajas de médicos: cuando un rep solicita un cambio, primero lo confirma su compañero antes de llegar a ti para aprobación final.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:.7rem">
+          <div class="field" style="margin-bottom:0">
+            <label>Representante</label>
+            <select id="par-rep" style="width:100%"></select>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Compañero</label>
+            <select id="par-comp" style="width:100%"></select>
+          </div>
+          <button onclick="guardarPar()" style="padding:9px 14px;border-radius:7px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f);white-space:nowrap">Guardar par</button>
+        </div>
+        <p style="font-size:11px;color:var(--t3);margin-bottom:.7rem"><b>Nota:</b> guardar establece la relación bidireccional (ambos son compañeros el uno del otro).</p>
+      </div>
+      <div id="pares-list"></div>
     </div>
 
     <!-- CICLO -->
@@ -2029,7 +2184,7 @@ async function validateRepAccess(rep) {
 // ═══════════════════════════════════════════════════════════
 // SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION = '2026-09-02-103000';
+const APP_VERSION = '2026-09-02-140000';
 
 async function checkForUpdates() {
   try {
@@ -2679,6 +2834,16 @@ function doLogin(){
     syncFromCloud(user).then(function(added){
       if (added > 0 && typeof renderGer === 'function') renderGer();
     });
+    // Cargar overrides/pares/solicitudes/marketing en background
+    Promise.all([
+      (typeof loadPanelOverrides==='function') ? loadPanelOverrides() : null,
+      (typeof loadRepPairs==='function') ? loadRepPairs() : null,
+      (typeof loadPanelSolicitudes==='function') ? loadPanelSolicitudes() : null,
+      (typeof loadFarmOverrides==='function') ? loadFarmOverrides() : null,
+      (typeof loadFarmSolicitudes==='function') ? loadFarmSolicitudes() : null,
+      (typeof loadMarketingCampanas==='function') ? loadMarketingCampanas() : null,
+      (typeof loadMarketingAsignaciones==='function') ? loadMarketingAsignaciones() : null
+    ]).catch(function(){});
     show('s-ger');
     applyFacturacionView(false);
     renderGer();
@@ -2741,6 +2906,16 @@ function doLogin(){
       buildProdChips(linea);
       buildMatChips();
       renderHist();
+      // Cargar overrides/pares/solicitudes/marketing en background
+      Promise.all([
+        (typeof loadPanelOverrides==='function') ? loadPanelOverrides() : null,
+        (typeof loadRepPairs==='function') ? loadRepPairs() : null,
+        (typeof loadPanelSolicitudes==='function') ? loadPanelSolicitudes() : null,
+        (typeof loadFarmOverrides==='function') ? loadFarmOverrides() : null,
+        (typeof loadFarmSolicitudes==='function') ? loadFarmSolicitudes() : null,
+        (typeof loadMarketingCampanas==='function') ? loadMarketingCampanas() : null,
+        (typeof loadMarketingAsignaciones==='function') ? loadMarketingAsignaciones() : null
+      ]).catch(function(){});
       applyMercaderistaView(!!MERCADERISTAS[user]);
     }).catch(function(e){
       // Si falló el sync, mostrar igual con CYCLE local
@@ -2756,6 +2931,16 @@ function doLogin(){
       buildProdChips(linea);
       buildMatChips();
       renderHist();
+      // Cargar overrides/pares/solicitudes/marketing en background
+      Promise.all([
+        (typeof loadPanelOverrides==='function') ? loadPanelOverrides() : null,
+        (typeof loadRepPairs==='function') ? loadRepPairs() : null,
+        (typeof loadPanelSolicitudes==='function') ? loadPanelSolicitudes() : null,
+        (typeof loadFarmOverrides==='function') ? loadFarmOverrides() : null,
+        (typeof loadFarmSolicitudes==='function') ? loadFarmSolicitudes() : null,
+        (typeof loadMarketingCampanas==='function') ? loadMarketingCampanas() : null,
+        (typeof loadMarketingAsignaciones==='function') ? loadMarketingAsignaciones() : null
+      ]).catch(function(){});
       applyMercaderistaView(!!MERCADERISTAS[user]);
     });
   });
@@ -2797,6 +2982,860 @@ function swTab(el,tabsId,screenId){
   if(el.dataset.tab==='t-ped'){ try{ initPedidosRep(); }catch(e){ console.warn('Pedidos rep error:', e); } }
   if(el.dataset.tab==='g-ped'){ try{ initPedidosGer(); }catch(e){ console.warn('Pedidos ger error:', e); } }
   if(el.dataset.tab==='t-pnl'){ try{ initMisPaneles(); }catch(e){ console.warn('Paneles error:', e); } }
+  if(el.dataset.tab==='g-solic'){ try{ initGerSolicitudes(); }catch(e){ console.warn('Solic error:', e); } }
+  if(el.dataset.tab==='g-pares'){ try{ initGerPares(); }catch(e){ console.warn('Pares error:', e); } }
+  if(el.dataset.tab==='g-mkt'){ try{ initGerMarketing(); }catch(e){ console.warn('Marketing error:', e); } }
+}
+
+// ── GERENTE: Solicitudes de panel (médicos + farmacias) ──
+var GS_TIPO = 'medicos'; // 'medicos' | 'farmacias'
+function switchSolicTipo(t){
+  GS_TIPO = t;
+  var bm = document.getElementById('gs-tab-med');
+  var bf = document.getElementById('gs-tab-farm');
+  if (bm && bf){
+    var onM  = 'flex:1;padding:9px;border-radius:7px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)';
+    var offM = 'flex:1;padding:9px;border-radius:7px;border:1px solid #1A5C3A;background:#E8F5E9;color:#1A5C3A;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)';
+    var onF  = 'flex:1;padding:9px;border-radius:7px;border:1px solid #1565C0;background:#1565C0;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)';
+    var offF = 'flex:1;padding:9px;border-radius:7px;border:1px solid #1565C0;background:#EAF2FB;color:#1565C0;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)';
+    bm.style.cssText = (t==='medicos')  ? onM : offM;
+    bf.style.cssText = (t==='farmacias') ? onF : offF;
+  }
+  renderGerSolicitudes();
+}
+function _solicRefresh(){
+  Promise.all([loadPanelSolicitudes(), loadFarmSolicitudes()]).then(renderGerSolicitudes);
+}
+async function initGerSolicitudes(){
+  try { await Promise.all([loadPanelSolicitudes(), loadFarmSolicitudes()]); } catch(e){}
+  switchSolicTipo(GS_TIPO || 'medicos');
+}
+function _updateSolicBadge(){
+  var pendMed = (PANEL_SOLICITUDES||[]).filter(function(s){ return s.estado === 'pendiente_gerente'; }).length;
+  var pendFar = (FARM_SOLICITUDES||[]).filter(function(s){ return s.estado === 'pendiente_gerente'; }).length;
+  var total = pendMed + pendFar;
+  var badge = document.getElementById('solic-badge');
+  if (badge){
+    if (total > 0){ badge.textContent = total; badge.style.display = ''; }
+    else badge.style.display = 'none';
+  }
+}
+function renderGerSolicitudes(){
+  var el = document.getElementById('ger-solic-list');
+  if (!el) return;
+  var fil = (document.getElementById('gs-filter')||{}).value || 'pendiente_gerente';
+  _updateSolicBadge();
+
+  if (GS_TIPO === 'medicos'){
+    var list = (PANEL_SOLICITUDES||[]).slice();
+    if (fil) list = list.filter(function(s){ return s.estado === fil; });
+    if (!list.length){ el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><p>Sin solicitudes de médicos con este filtro.</p></div>'; return; }
+    el.innerHTML = list.map(function(s){
+      var col = s.tipo==='alta' ? '#1A5C3A' : '#C0392B';
+      var lbl = s.tipo==='alta' ? '➕ ALTA' : '❌ BAJA';
+      var estCol = {'pendiente_companero':'#C47A0A','pendiente_gerente':'#1565C0','aprobada':'#1A5C3A','rechazada':'#C0392B'}[s.estado]||'#666';
+      var estLbl = {'pendiente_companero':'Espera compañero','pendiente_gerente':'⏳ ESPERA TU APROBACIÓN','aprobada':'✓ Aprobada','rechazada':'✕ Rechazada'}[s.estado]||s.estado;
+      var acciones = '';
+      if (s.estado === 'pendiente_gerente'){
+        acciones = '<div style="display:flex;gap:6px;margin-top:10px">'
+          + '<button onclick="gerenteAprobarSolicitud('+s.id+')" style="flex:1;padding:9px;border-radius:7px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)">✓ Aprobar y aplicar</button>'
+          + '<button onclick="rechazarSolicitud('+s.id+',\'GERENTE\')" style="flex:1;padding:9px;border-radius:7px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)">✕ Rechazar</button>'
+          + '</div>';
+      }
+      return '<div class="card" style="padding:12px 14px;margin-bottom:8px;border-left:4px solid '+col+'">'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:start;margin-bottom:6px">'
+        +   '<div><b style="color:'+col+';font-size:13px">'+lbl+' MÉDICO — '+esc_(s.nombre)+'</b>'
+        +     '<div style="font-size:11.5px;color:var(--t2);margin-top:2px">'+esc_((s.especialidad||'')+(s.ciudad?' · '+s.ciudad:'')+(s.tipo_medico?' · '+s.tipo_medico:''))+(s.direccion?'<br>'+esc_(s.direccion):'')+'</div>'
+        +   '</div>'
+        +   '<span style="font-size:10.5px;color:#fff;background:'+estCol+';padding:3px 8px;border-radius:5px;font-weight:700;white-space:nowrap">'+estLbl+'</span>'
+        + '</div>'
+        + '<div style="font-size:11.5px;color:var(--t3);margin-bottom:6px">Solicita <b>'+esc_(s.rep_solicita)+'</b> · Compañero <b>'+esc_(s.rep_companero)+'</b> · '+(s.created_at?fmtShort(s.created_at.slice(0,10)):'')+(s.comp_aprobado_at?' · Confirmada '+fmtShort(s.comp_aprobado_at.slice(0,10)):'')+'</div>'
+        + (s.motivo?'<div style="font-size:12px;padding:7px 10px;background:#FEF3C7;border-radius:6px;color:var(--t1)"><b>Motivo:</b> '+esc_(s.motivo)+'</div>':'')
+        + (s.rechazo_motivo?'<div style="font-size:12px;padding:7px 10px;background:#FEE2E2;border-radius:6px;color:#C0392B;margin-top:6px"><b>Rechazo ('+esc_(s.rechazado_por||'')+'):</b> '+esc_(s.rechazo_motivo)+'</div>':'')
+        + acciones
+        + '</div>';
+    }).join('');
+  } else {
+    // Farmacias
+    var listF = (FARM_SOLICITUDES||[]).slice();
+    if (fil === 'pendiente_companero'){ el.innerHTML = '<div class="empty"><p>Las farmacias no tienen paso de compañero: van directo del rep al gerente.</p></div>'; return; }
+    if (fil) listF = listF.filter(function(s){ return s.estado === fil; });
+    if (!listF.length){ el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><p>Sin solicitudes de farmacias con este filtro.</p></div>'; return; }
+    el.innerHTML = listF.map(function(s){
+      var col = s.tipo==='alta' ? '#1565C0' : '#C0392B';
+      var lbl = s.tipo==='alta' ? '➕ ALTA' : '❌ BAJA';
+      var estCol = {'pendiente_gerente':'#1565C0','aprobada':'#1A5C3A','rechazada':'#C0392B'}[s.estado]||'#666';
+      var estLbl = {'pendiente_gerente':'⏳ ESPERA TU APROBACIÓN','aprobada':'✓ Aprobada','rechazada':'✕ Rechazada'}[s.estado]||s.estado;
+      var conflicto = '';
+      if (s.tipo === 'alta' && s.estado === 'pendiente_gerente'){
+        var owner = _findFarmOwner(s.cod);
+        if (owner && owner !== s.rep_solicita){
+          conflicto = '<div style="font-size:12px;padding:7px 10px;background:#FEE2E2;border-radius:6px;color:#C0392B;margin-top:6px"><b>⚠️ Conflicto:</b> el código '+esc_(s.cod)+' ya está asignado a: '+esc_(owner)+'. Pide primero la baja del otro rep.</div>';
+        }
+      }
+      var acciones = '';
+      if (s.estado === 'pendiente_gerente'){
+        acciones = '<div style="display:flex;gap:6px;margin-top:10px">'
+          + '<button onclick="gerenteAprobarFarmSolicitud('+s.id+')" style="flex:1;padding:9px;border-radius:7px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)">✓ Aprobar y aplicar</button>'
+          + '<button onclick="rechazarFarmSolicitud('+s.id+',\'GERENTE\')" style="flex:1;padding:9px;border-radius:7px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--f)">✕ Rechazar</button>'
+          + '</div>';
+      }
+      return '<div class="card" style="padding:12px 14px;margin-bottom:8px;border-left:4px solid '+col+'">'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:start;margin-bottom:6px">'
+        +   '<div><b style="color:'+col+';font-size:13px">'+lbl+' FARMACIA — '+esc_(s.pdv)+' <span style="color:var(--t3);font-weight:400">('+esc_(s.cod)+')</span></b>'
+        +     '<div style="font-size:11.5px;color:var(--t2);margin-top:2px">'+esc_((s.cadena||'')+(s.ciudad?' · '+s.ciudad:'')+(s.zona?' · '+s.zona:''))+(s.direccion?'<br>'+esc_(s.direccion):'')+'</div>'
+        +   '</div>'
+        +   '<span style="font-size:10.5px;color:#fff;background:'+estCol+';padding:3px 8px;border-radius:5px;font-weight:700;white-space:nowrap">'+estLbl+'</span>'
+        + '</div>'
+        + '<div style="font-size:11.5px;color:var(--t3);margin-bottom:6px">Solicita <b>'+esc_(s.rep_solicita)+'</b> · '+(s.created_at?fmtShort(s.created_at.slice(0,10)):'')+'</div>'
+        + (s.motivo?'<div style="font-size:12px;padding:7px 10px;background:#FEF3C7;border-radius:6px;color:var(--t1)"><b>Motivo:</b> '+esc_(s.motivo)+'</div>':'')
+        + conflicto
+        + (s.rechazo_motivo?'<div style="font-size:12px;padding:7px 10px;background:#FEE2E2;border-radius:6px;color:#C0392B;margin-top:6px"><b>Rechazo ('+esc_(s.rechazado_por||'')+'):</b> '+esc_(s.rechazo_motivo)+'</div>':'')
+        + acciones
+        + '</div>';
+    }).join('');
+  }
+}
+
+// ── GERENTE: Pares de reps ──
+async function initGerPares(){
+  try { await loadRepPairs(); } catch(e){}
+  var reps = (typeof getAllReps==='function') ? getAllReps() : Object.keys(PANEL||{}).sort();
+  var selRep  = document.getElementById('par-rep');
+  var selComp = document.getElementById('par-comp');
+  if (selRep && selComp){
+    var opts = '<option value="">— Selecciona —</option>' + reps.map(function(r){ return '<option value="'+r+'">'+r+'</option>'; }).join('');
+    selRep.innerHTML = opts;
+    selComp.innerHTML = opts;
+  }
+  renderParesList();
+}
+function renderParesList(){
+  var el = document.getElementById('pares-list');
+  if (!el) return;
+  var keys = Object.keys(REP_PAIRS||{}).sort();
+  if (!keys.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">👥</div><p>Sin pares configurados. Selecciona un rep y su compañero arriba, luego "Guardar par".</p></div>';
+    return;
+  }
+  // Agrupar bidireccional para no mostrar duplicados
+  var shown = {};
+  var pares = [];
+  keys.forEach(function(r){
+    var comp = REP_PAIRS[r];
+    var k = [r,comp].sort().join('||');
+    if (shown[k]) return;
+    shown[k] = true;
+    pares.push([r, comp]);
+  });
+  el.innerHTML = '<div class="card" style="padding:0;overflow:hidden">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12.5px">'
+    + '<thead><tr style="background:#F1F6F3"><th style="text-align:left;padding:9px 11px;font-weight:700;color:var(--t2)">Rep 1</th><th style="text-align:left;padding:9px 11px;font-weight:700;color:var(--t2)">Rep 2 (compañero)</th><th style="text-align:right;padding:9px 11px;font-weight:700;color:var(--t2)">Acción</th></tr></thead><tbody>'
+    + pares.map(function(p,i){
+        var bg = i%2?'#FBFDFC':'#fff';
+        return '<tr style="background:'+bg+'"><td style="padding:9px 11px;border-bottom:1px solid #EEF3F0;font-weight:600">'+esc_(p[0])+'</td>'
+          + '<td style="padding:9px 11px;border-bottom:1px solid #EEF3F0;font-weight:600">'+esc_(p[1])+'</td>'
+          + '<td style="padding:9px 11px;border-bottom:1px solid #EEF3F0;text-align:right">'
+          +   '<button onclick="eliminarPar(\''+p[0].replace(/\'/g,"\\\'")+'\',\''+p[1].replace(/\'/g,"\\\'")+'\')" style="padding:6px 10px;border-radius:6px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:11px;cursor:pointer;font-family:var(--f)">🗑 Eliminar</button>'
+          + '</td></tr>';
+      }).join('')
+    + '</tbody></table></div>';
+}
+async function guardarPar(){
+  var rep = document.getElementById('par-rep').value;
+  var comp = document.getElementById('par-comp').value;
+  if (!rep || !comp){ alert('Selecciona ambos reps.'); return; }
+  if (rep === comp){ alert('El rep y el compañero no pueden ser la misma persona.'); return; }
+  try {
+    // Upsert ambos lados (usa fetch directo para agregar el header de merge-duplicates)
+    var pairs = [{rep:rep,companero:comp},{rep:comp,companero:rep}];
+    for (var i=0;i<pairs.length;i++){
+      var r = await fetch(SUPABASE_URL+'/rest/v1/rep_pairs?on_conflict=rep', {
+        method:'POST',
+        headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+        body: JSON.stringify(pairs[i])
+      });
+      if (!r.ok){ throw new Error('HTTP '+r.status+' '+(await r.text())); }
+    }
+    await loadRepPairs();
+    renderParesList();
+    if (typeof showToast==='function') showToast('✅ Par guardado');
+  } catch(e){ alert('Error: '+e.message); }
+}
+async function eliminarPar(r1, r2){
+  if (!confirm('¿Eliminar la pareja '+r1+' ↔ '+r2+'?')) return;
+  try {
+    await sbRequest('DELETE', '/rep_pairs?rep=in.("'+r1.replace(/"/g,'\\"')+'","'+r2.replace(/"/g,'\\"')+'")');
+    await loadRepPairs();
+    renderParesList();
+  } catch(e){ alert('Error: '+e.message); }
+}
+
+// ── SOLICITUDES DE CAMBIO DE PANEL (alta/baja de médicos con flujo de aprobación) ──
+var REP_PAIRS = {};              // rep -> companero (bidireccional; ambos lados deben existir)
+var PANEL_SOLICITUDES = [];      // solicitudes cacheadas
+var PANEL_OVERRIDES = [];        // overrides cacheados
+
+async function loadRepPairs(){
+  try {
+    var rows = await sbRequest('GET', '/rep_pairs?select=*');
+    REP_PAIRS = {};
+    (rows||[]).forEach(function(r){ REP_PAIRS[r.rep] = r.companero; });
+  } catch(e){ console.warn('loadRepPairs falló:', e.message); }
+}
+async function loadPanelSolicitudes(){
+  try {
+    var rows = await sbRequest('GET', '/panel_solicitudes?order=created_at.desc&limit=500');
+    PANEL_SOLICITUDES = rows || [];
+  } catch(e){ console.warn('loadPanelSolicitudes falló:', e.message); PANEL_SOLICITUDES = []; }
+}
+async function loadPanelOverrides(){
+  try {
+    var rows = await sbRequest('GET', '/panel_overrides?order=created_at.asc&limit=1000');
+    PANEL_OVERRIDES = rows || [];
+    applyPanelOverrides();
+  } catch(e){ console.warn('loadPanelOverrides falló:', e.message); }
+}
+function applyPanelOverrides(){
+  (PANEL_OVERRIDES||[]).forEach(function(o){
+    if (!PANEL[o.rep]) PANEL[o.rep] = [];
+    var nombreU = (o.nombre||'').toUpperCase().trim();
+    if (o.accion === 'add'){
+      var exists = PANEL[o.rep].some(function(m){ return (m.nombre||'').toUpperCase().trim() === nombreU; });
+      if (!exists){
+        PANEL[o.rep].push({
+          nombre: o.nombre,
+          especialidad: o.especialidad || '',
+          ciudad: o.ciudad || '',
+          direccion: o.direccion || '',
+          tipo: o.tipo_medico || ''
+        });
+      }
+    } else if (o.accion === 'remove'){
+      PANEL[o.rep] = PANEL[o.rep].filter(function(m){ return (m.nombre||'').toUpperCase().trim() !== nombreU; });
+    }
+  });
+}
+
+// Enviar solicitud (rep)
+async function submitSolicitud(tipo, data){
+  var comp = REP_PAIRS[CU];
+  if (!comp){
+    alert('No tienes compañero asignado. Pídele al gerente que configure tu pareja en Panel gerencial → Pares.');
+    return false;
+  }
+  var payload = {
+    tipo: tipo,
+    rep_solicita: CU,
+    rep_companero: comp,
+    nombre: (data.nombre||'').trim(),
+    especialidad: data.especialidad||'',
+    ciudad: data.ciudad||'',
+    direccion: data.direccion||'',
+    tipo_medico: data.tipo_medico||'',
+    motivo: (data.motivo||'').trim(),
+    estado: 'pendiente_companero'
+  };
+  if (!payload.nombre){ alert('Falta el nombre del médico.'); return false; }
+  if (tipo==='baja' && !payload.motivo){ alert('El motivo es obligatorio para dar de baja a un médico.'); return false; }
+  try {
+    await sbRequest('POST', '/panel_solicitudes', payload);
+    await loadPanelSolicitudes();
+    if (typeof showToast==='function') showToast('✅ Solicitud enviada. Espera la aprobación de '+comp+'.');
+    renderMisSolicitudes();
+    return true;
+  } catch(e){
+    alert('Error al enviar solicitud: ' + e.message);
+    return false;
+  }
+}
+// Confirmar solicitud (compañero)
+async function confirmarSolicitudCompanero(id){
+  if (!confirm('¿Confirmas que estás de acuerdo con esta solicitud? Después irá al gerente para aprobación final.')) return;
+  try {
+    await sbRequest('PATCH', '/panel_solicitudes?id=eq.'+id, {
+      estado: 'pendiente_gerente',
+      comp_aprobado_at: new Date().toISOString()
+    });
+    await loadPanelSolicitudes();
+    renderMisSolicitudes();
+    if (typeof showToast==='function') showToast('✅ Confirmada. Pendiente aprobación del gerente.');
+  } catch(e){ alert('Error: '+e.message); }
+}
+// Rechazar solicitud (compañero o gerente)
+async function rechazarSolicitud(id, quien){
+  var motivo = prompt('Motivo del rechazo:');
+  if (!motivo) return;
+  try {
+    await sbRequest('PATCH', '/panel_solicitudes?id=eq.'+id, {
+      estado: 'rechazada',
+      rechazado_por: quien || CU,
+      rechazo_motivo: motivo
+    });
+    await loadPanelSolicitudes();
+    renderMisSolicitudes();
+    if (typeof renderGerSolicitudes==='function') renderGerSolicitudes();
+    if (typeof showToast==='function') showToast('Solicitud rechazada.');
+  } catch(e){ alert('Error: '+e.message); }
+}
+// Gerente aprueba: crea el override e inserta en panel_overrides
+async function gerenteAprobarSolicitud(id){
+  var s = (PANEL_SOLICITUDES||[]).find(function(x){ return x.id === id; });
+  if (!s){ alert('Solicitud no encontrada.'); return; }
+  if (!confirm('¿Aprobar solicitud de '+s.tipo+' de '+s.nombre+' para '+s.rep_solicita+'?')) return;
+  try {
+    var override = {
+      rep: s.rep_solicita,
+      accion: s.tipo === 'alta' ? 'add' : 'remove',
+      nombre: s.nombre,
+      especialidad: s.especialidad||'',
+      ciudad: s.ciudad||'',
+      direccion: s.direccion||'',
+      tipo_medico: s.tipo_medico||'',
+      source_solicitud: s.id
+    };
+    await sbRequest('POST', '/panel_overrides', override);
+    await sbRequest('PATCH', '/panel_solicitudes?id=eq.'+id, {
+      estado: 'aprobada',
+      gerente_aprobado_at: new Date().toISOString()
+    });
+    // Aplicar localmente
+    PANEL_OVERRIDES.push(override);
+    applyPanelOverrides();
+    await loadPanelSolicitudes();
+    if (typeof renderGerSolicitudes==='function') renderGerSolicitudes();
+    if (typeof showToast==='function') showToast('✅ Aprobado. Cambio aplicado en vivo.');
+  } catch(e){ alert('Error: '+e.message); }
+}
+
+// UI: modal alta médico
+function openSolicitudAlta(){
+  var m = document.getElementById('modal-alta-med');
+  if (!m) return;
+  ['sa-nombre','sa-esp','sa-ciudad','sa-dir','sa-motivo'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  var t = document.getElementById('sa-tipo'); if (t) t.value = 'CIU';
+  m.style.display = 'flex';
+}
+function closeSolicitudAlta(){ var m=document.getElementById('modal-alta-med'); if (m) m.style.display='none'; }
+async function submitSolicitudAlta(){
+  var data = {
+    nombre:      document.getElementById('sa-nombre').value,
+    especialidad: document.getElementById('sa-esp').value,
+    ciudad:      document.getElementById('sa-ciudad').value,
+    direccion:   document.getElementById('sa-dir').value,
+    tipo_medico: document.getElementById('sa-tipo').value,
+    motivo:      document.getElementById('sa-motivo').value
+  };
+  var ok = await submitSolicitud('alta', data);
+  if (ok) closeSolicitudAlta();
+}
+// UI: solicitar baja (motivo obligatorio)
+async function solicitarBajaMedico(nombre, esp, ciudad, dir, tipo){
+  var motivo = prompt('MOTIVO de la baja (obligatorio):\n\nEj: "cambió de zona", "se mudó a Cuenca", "ya no atiende", "falleció"...\n\nMédico: '+nombre);
+  if (motivo === null) return;
+  motivo = motivo.trim();
+  if (!motivo){ alert('El motivo es obligatorio.'); return; }
+  await submitSolicitud('baja', {
+    nombre: nombre, especialidad: esp||'', ciudad: ciudad||'',
+    direccion: dir||'', tipo_medico: tipo||'', motivo: motivo
+  });
+}
+// Renderiza "Mis solicitudes" + "Solicitudes de mi compañero"
+function renderMisSolicitudes(){
+  var el = document.getElementById('pnl-solicitudes');
+  if (!el) return;
+  var mias = (PANEL_SOLICITUDES||[]).filter(function(s){ return s.rep_solicita === CU; });
+  var deComp = (PANEL_SOLICITUDES||[]).filter(function(s){ return s.rep_companero === CU && s.estado === 'pendiente_companero'; });
+  var html = '';
+  // Sección 1: solicitudes pendientes de mi confirmación como compañero
+  if (deComp.length){
+    html += '<div style="font-size:12px;font-weight:700;color:#C47A0A;margin:.6rem 0 .4rem 0;text-transform:uppercase;letter-spacing:.03em">⏳ Pendientes de tu confirmación como compañero ('+deComp.length+')</div>';
+    html += deComp.map(function(s){
+      var col = s.tipo==='alta' ? '#1A5C3A' : '#C0392B';
+      var lbl = s.tipo==='alta' ? '➕ ALTA' : '❌ BAJA';
+      return '<div style="border:2px solid '+col+';border-radius:9px;padding:11px 13px;margin-bottom:8px;background:#fff">'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px"><b style="color:'+col+';font-size:12.5px">'+lbl+' — '+esc_(s.nombre)+'</b><span style="font-size:10.5px;color:var(--t3)">Solicita: '+esc_(s.rep_solicita)+'</span></div>'
+        + '<div style="font-size:11.5px;color:var(--t2);margin-bottom:6px">'+esc_((s.especialidad||'')+(s.ciudad?' · '+s.ciudad:'')+(s.tipo_medico?' · '+s.tipo_medico:''))+(s.direccion?'<br>'+esc_(s.direccion):'')+'</div>'
+        + (s.motivo?'<div style="font-size:12px;color:var(--t1);margin-bottom:8px;padding:6px 8px;background:#FEF3C7;border-radius:5px"><b>Motivo:</b> '+esc_(s.motivo)+'</div>':'')
+        + '<div style="display:flex;gap:6px">'
+        +   '<button onclick="confirmarSolicitudCompanero('+s.id+')" style="flex:1;padding:8px;border-radius:6px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:12px;cursor:pointer;font-family:var(--f)">✓ Confirmar</button>'
+        +   '<button onclick="rechazarSolicitud('+s.id+',\''+CU.replace(/\'/g,"\\\'")+'\')" style="flex:1;padding:8px;border-radius:6px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:12px;cursor:pointer;font-family:var(--f)">✕ Rechazar</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
+  // Sección 2: mis solicitudes recientes
+  if (mias.length){
+    html += '<div style="font-size:12px;font-weight:700;color:var(--t2);margin:.9rem 0 .4rem 0;text-transform:uppercase;letter-spacing:.03em">📋 Mis solicitudes recientes ('+mias.length+')</div>';
+    html += mias.slice(0,15).map(function(s){
+      var estadoCol = {'pendiente_companero':'#C47A0A','pendiente_gerente':'#1565C0','aprobada':'#1A5C3A','rechazada':'#C0392B'}[s.estado] || '#666';
+      var estadoLbl = {'pendiente_companero':'Espera compañero','pendiente_gerente':'Espera gerente','aprobada':'Aprobada','rechazada':'Rechazada'}[s.estado] || s.estado;
+      var tipoLbl = s.tipo==='alta' ? '➕ Alta' : '❌ Baja';
+      return '<div style="border:1px solid var(--b);border-radius:8px;padding:9px 11px;margin-bottom:6px;background:#fff">'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font-size:12.5px">'+tipoLbl+' · '+esc_(s.nombre)+'</b><span style="font-size:10.5px;color:#fff;background:'+estadoCol+';padding:2px 7px;border-radius:5px;font-weight:700">'+estadoLbl+'</span></div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:3px">Compañero: '+esc_(s.rep_companero)+' · '+fmtShort(s.created_at.slice(0,10))+'</div>'
+        + (s.motivo?'<div style="font-size:11px;color:var(--t2);margin-top:3px"><i>'+esc_(s.motivo)+'</i></div>':'')
+        + (s.rechazo_motivo?'<div style="font-size:11px;color:#C0392B;margin-top:3px"><b>Rechazo:</b> '+esc_(s.rechazo_motivo)+'</div>':'')
+        + '</div>';
+    }).join('');
+  }
+  if (!html) html = '<div style="font-size:12px;color:var(--t3);padding:.5rem 0">Sin solicitudes.</div>';
+  el.innerHTML = html;
+}
+
+// ── SOLICITUDES DE FARMACIAS (individual: rep → gerente, sin compañero) ──
+var FARM_SOLICITUDES = [];
+var FARM_OVERRIDES = [];
+
+async function loadFarmSolicitudes(){
+  try {
+    var rows = await sbRequest('GET', '/farmacia_solicitudes?order=created_at.desc&limit=500');
+    FARM_SOLICITUDES = rows || [];
+  } catch(e){ console.warn('loadFarmSolicitudes falló:', e.message); FARM_SOLICITUDES = []; }
+}
+async function loadFarmOverrides(){
+  try {
+    var rows = await sbRequest('GET', '/farmacia_overrides?order=created_at.asc&limit=1000');
+    FARM_OVERRIDES = rows || [];
+    applyFarmOverrides();
+  } catch(e){ console.warn('loadFarmOverrides falló:', e.message); }
+}
+function applyFarmOverrides(){
+  (FARM_OVERRIDES||[]).forEach(function(o){
+    var key = (typeof farmPanelKey==='function') ? farmPanelKey(o.rep) : o.rep;
+    if (!FARM_PANEL[key]) FARM_PANEL[key] = [];
+    var codU = String(o.cod||'').toUpperCase().trim();
+    if (o.accion === 'add'){
+      var exists = FARM_PANEL[key].some(function(f){ return String(f.cod||'').toUpperCase().trim() === codU; });
+      if (!exists){
+        FARM_PANEL[key].push({
+          cod: o.cod, pdv: o.pdv||'', cadena: o.cadena||'',
+          ciudad: o.ciudad||'', dir: o.direccion||'', zona: o.zona||''
+        });
+      }
+    } else if (o.accion === 'remove'){
+      FARM_PANEL[key] = FARM_PANEL[key].filter(function(f){ return String(f.cod||'').toUpperCase().trim() !== codU; });
+    }
+  });
+}
+// Devuelve el rep dueño actual de una farmacia por cod, o null si no existe
+function _findFarmOwner(cod){
+  var codU = String(cod||'').toUpperCase().trim();
+  var owners = [];
+  Object.keys(FARM_PANEL||{}).forEach(function(rep){
+    (FARM_PANEL[rep]||[]).forEach(function(f){
+      if (String(f.cod||'').toUpperCase().trim() === codU) owners.push(rep);
+    });
+  });
+  return owners.length ? owners.join(', ') : null;
+}
+async function submitFarmSolicitud(tipo, data){
+  var payload = {
+    tipo: tipo,
+    rep_solicita: CU,
+    cod: (data.cod||'').trim(),
+    pdv: (data.pdv||'').trim(),
+    cadena: data.cadena||'',
+    ciudad: data.ciudad||'',
+    direccion: data.direccion||'',
+    zona: data.zona||'',
+    motivo: (data.motivo||'').trim(),
+    estado: 'pendiente_gerente'
+  };
+  if (!payload.cod){ alert('Falta el código de la farmacia.'); return false; }
+  if (!payload.pdv){ alert('Falta el nombre (PDV) de la farmacia.'); return false; }
+  if (tipo==='baja' && !payload.motivo){ alert('El motivo es obligatorio para dar de baja una farmacia.'); return false; }
+  try {
+    await sbRequest('POST', '/farmacia_solicitudes', payload);
+    await loadFarmSolicitudes();
+    if (typeof showToast==='function') showToast('✅ Solicitud enviada al gerente.');
+    renderMisFarmSolicitudes();
+    return true;
+  } catch(e){ alert('Error: '+e.message); return false; }
+}
+async function gerenteAprobarFarmSolicitud(id){
+  var s = (FARM_SOLICITUDES||[]).find(function(x){ return x.id === id; });
+  if (!s){ alert('Solicitud no encontrada.'); return; }
+  var advertencia = '';
+  if (s.tipo === 'alta'){
+    var owner = _findFarmOwner(s.cod);
+    if (owner && owner !== s.rep_solicita){
+      advertencia = '\n\n⚠️ ATENCIÓN: la farmacia código '+s.cod+' YA está asignada a: '+owner+'.\nSi apruebas, la farmacia se AGREGARÁ a '+s.rep_solicita+' pero también quedará en '+owner+'. Considera rechazar y pedir que el otro rep haga la baja primero.';
+    }
+  }
+  if (!confirm('¿Aprobar solicitud de '+s.tipo+' de farmacia '+s.cod+' ('+s.pdv+') para '+s.rep_solicita+'?'+advertencia)) return;
+  try {
+    var override = {
+      rep: s.rep_solicita,
+      accion: s.tipo === 'alta' ? 'add' : 'remove',
+      cod: s.cod, pdv: s.pdv||'', cadena: s.cadena||'',
+      ciudad: s.ciudad||'', direccion: s.direccion||'', zona: s.zona||'',
+      source_solicitud: s.id
+    };
+    await sbRequest('POST', '/farmacia_overrides', override);
+    await sbRequest('PATCH', '/farmacia_solicitudes?id=eq.'+id, {
+      estado: 'aprobada',
+      gerente_aprobado_at: new Date().toISOString()
+    });
+    FARM_OVERRIDES.push(override);
+    applyFarmOverrides();
+    await loadFarmSolicitudes();
+    if (typeof renderGerSolicitudes==='function') renderGerSolicitudes();
+    if (typeof showToast==='function') showToast('✅ Aprobado. Cambio aplicado en vivo.');
+  } catch(e){ alert('Error: '+e.message); }
+}
+async function rechazarFarmSolicitud(id, quien){
+  var motivo = prompt('Motivo del rechazo:');
+  if (!motivo) return;
+  try {
+    await sbRequest('PATCH', '/farmacia_solicitudes?id=eq.'+id, {
+      estado: 'rechazada', rechazado_por: quien || CU, rechazo_motivo: motivo
+    });
+    await loadFarmSolicitudes();
+    if (typeof renderGerSolicitudes==='function') renderGerSolicitudes();
+    renderMisFarmSolicitudes();
+    if (typeof showToast==='function') showToast('Solicitud rechazada.');
+  } catch(e){ alert('Error: '+e.message); }
+}
+
+// UI modal alta farmacia
+function openSolicitudAltaFarm(){
+  var m = document.getElementById('modal-alta-farm');
+  if (!m) return;
+  ['saf-cod','saf-pdv','saf-cadena','saf-ciudad','saf-dir','saf-zona','saf-motivo'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  m.style.display = 'flex';
+}
+function closeSolicitudAltaFarm(){ var m=document.getElementById('modal-alta-farm'); if (m) m.style.display='none'; }
+async function submitSolicitudAltaFarm(){
+  var data = {
+    cod:       document.getElementById('saf-cod').value,
+    pdv:       document.getElementById('saf-pdv').value,
+    cadena:    document.getElementById('saf-cadena').value,
+    ciudad:    document.getElementById('saf-ciudad').value,
+    direccion: document.getElementById('saf-dir').value,
+    zona:      document.getElementById('saf-zona').value,
+    motivo:    document.getElementById('saf-motivo').value
+  };
+  var ok = await submitFarmSolicitud('alta', data);
+  if (ok) closeSolicitudAltaFarm();
+}
+async function solicitarBajaFarmacia(cod, pdv, cadena, ciudad, dir, zona){
+  var motivo = prompt('MOTIVO de la baja de la farmacia (obligatorio):\n\nEj: "cerrada", "cambió de propietario", "reubicada"...\n\nFarmacia: '+pdv+' ('+cod+')');
+  if (motivo === null) return;
+  motivo = motivo.trim();
+  if (!motivo){ alert('El motivo es obligatorio.'); return; }
+  await submitFarmSolicitud('baja', {
+    cod: cod, pdv: pdv||'', cadena: cadena||'',
+    ciudad: ciudad||'', direccion: dir||'', zona: zona||'', motivo: motivo
+  });
+}
+function renderMisFarmSolicitudes(){
+  var el = document.getElementById('pnl-farm-solicitudes');
+  if (!el) return;
+  var mias = (FARM_SOLICITUDES||[]).filter(function(s){ return s.rep_solicita === CU; });
+  if (!mias.length){ el.innerHTML = '<div style="font-size:12px;color:var(--t3);padding:.5rem 0">Sin solicitudes.</div>'; return; }
+  el.innerHTML = mias.slice(0,15).map(function(s){
+    var estadoCol = {'pendiente_gerente':'#1565C0','aprobada':'#1A5C3A','rechazada':'#C0392B'}[s.estado] || '#666';
+    var estadoLbl = {'pendiente_gerente':'Espera gerente','aprobada':'Aprobada','rechazada':'Rechazada'}[s.estado] || s.estado;
+    var tipoLbl = s.tipo==='alta' ? '➕ Alta' : '❌ Baja';
+    return '<div style="border:1px solid var(--b);border-radius:8px;padding:9px 11px;margin-bottom:6px;background:#fff">'
+      + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font-size:12.5px">'+tipoLbl+' · '+esc_(s.pdv)+' <span style="color:var(--t3);font-weight:400">('+esc_(s.cod)+')</span></b><span style="font-size:10.5px;color:#fff;background:'+estadoCol+';padding:2px 7px;border-radius:5px;font-weight:700">'+estadoLbl+'</span></div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-top:3px">'+fmtShort(s.created_at.slice(0,10))+'</div>'
+      + (s.motivo?'<div style="font-size:11px;color:var(--t2);margin-top:3px"><i>'+esc_(s.motivo)+'</i></div>':'')
+      + (s.rechazo_motivo?'<div style="font-size:11px;color:#C0392B;margin-top:3px"><b>Rechazo:</b> '+esc_(s.rechazo_motivo)+'</div>':'')
+      + '</div>';
+  }).join('');
+}
+
+// ── MARKETING: campañas de obsequios ──
+var MARKETING_CAMPANAS = [];       // todas las campañas
+var MARKETING_ASIGNACIONES = [];   // todas las asignaciones (rep, medico, campana, estado)
+var PNL_VIEW = 'trabajo';          // 'trabajo' | 'marketing'
+var MKT_CAMPANA_ID = null;         // campaña seleccionada por el rep en la vista Marketing
+
+async function loadMarketingCampanas(){
+  try {
+    var rows = await sbRequest('GET', '/marketing_campanas?order=created_at.desc&limit=200');
+    MARKETING_CAMPANAS = rows || [];
+  } catch(e){ console.warn('loadMarketingCampanas falló:', e.message); MARKETING_CAMPANAS = []; }
+}
+async function loadMarketingAsignaciones(){
+  try {
+    var rows = await sbRequest('GET', '/marketing_asignaciones?order=created_at.desc&limit=5000');
+    MARKETING_ASIGNACIONES = rows || [];
+  } catch(e){ console.warn('loadMarketingAsignaciones falló:', e.message); MARKETING_ASIGNACIONES = []; }
+}
+function _campanasActivas(){ return (MARKETING_CAMPANAS||[]).filter(function(c){ return c.estado === 'activa'; }); }
+function _findAsig(campId, medico){
+  var medU = (medico||'').toUpperCase().trim();
+  return (MARKETING_ASIGNACIONES||[]).find(function(a){ return a.campana_id === campId && (a.medico||'').toUpperCase().trim() === medU; });
+}
+// Asignaciones "seleccionadas" (pendientes de entrega) para un médico visitado por CU (todas las campañas activas)
+function asignacionesPendientesPara(medico){
+  var medU = (medico||'').toUpperCase().trim();
+  var actIds = _campanasActivas().map(function(c){ return c.id; });
+  return (MARKETING_ASIGNACIONES||[]).filter(function(a){
+    return a.rep === CU
+      && (a.medico||'').toUpperCase().trim() === medU
+      && a.estado === 'seleccionado'
+      && actIds.indexOf(a.campana_id) >= 0;
+  });
+}
+// Rep: seleccionar médico para campaña
+async function mktSeleccionar(campId, m){
+  var existente = _findAsig(campId, m.nombre);
+  if (existente){
+    if (existente.rep !== CU){ alert('Ya asignado a: '+existente.rep); return; }
+    return; // ya está tomado por CU
+  }
+  try {
+    var payload = {
+      campana_id: campId, rep: CU, medico: m.nombre,
+      especialidad: m.especialidad||'', ciudad: m.ciudad||'',
+      estado: 'seleccionado'
+    };
+    var rows = await sbRequest('POST', '/marketing_asignaciones', payload);
+    if (rows && rows[0]) MARKETING_ASIGNACIONES.push(rows[0]);
+    renderMarketingList();
+    if (typeof showToast==='function') showToast('✓ '+m.nombre+' añadido a la campaña');
+  } catch(e){
+    // Si 409 (unique violation), otro rep lo tomó primero — recargar
+    if (String(e.message).indexOf('409')>=0 || String(e.message).indexOf('duplicate')>=0){
+      alert('Otro rep se adelantó y tomó a este médico. Recargando lista…');
+      await loadMarketingAsignaciones();
+      renderMarketingList();
+    } else {
+      alert('Error: '+e.message);
+    }
+  }
+}
+async function mktDesmarcar(asigId){
+  if (!confirm('¿Quitar este médico de la campaña?')) return;
+  try {
+    await sbRequest('DELETE', '/marketing_asignaciones?id=eq.'+asigId);
+    MARKETING_ASIGNACIONES = MARKETING_ASIGNACIONES.filter(function(a){ return a.id !== asigId; });
+    renderMarketingList();
+    if (typeof showToast==='function') showToast('Removido de la campaña');
+  } catch(e){ alert('Error: '+e.message); }
+}
+async function mktMarcarEntregado(asigId, comentario){
+  try {
+    var body = { estado:'entregado', fecha_entrega: (typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10)) };
+    if (comentario) body.comentario = comentario;
+    var rows = await sbRequest('PATCH', '/marketing_asignaciones?id=eq.'+asigId, body);
+    var idx = MARKETING_ASIGNACIONES.findIndex(function(a){ return a.id === asigId; });
+    if (idx >= 0 && rows && rows[0]) MARKETING_ASIGNACIONES[idx] = rows[0];
+    return true;
+  } catch(e){ console.warn('mktMarcarEntregado falló:', e.message); return false; }
+}
+
+function switchPnlView(view){
+  PNL_VIEW = view;
+  var bT = document.getElementById('pnl-view-trabajo');
+  var bM = document.getElementById('pnl-view-mkt');
+  var wT = document.getElementById('pnl-view-trabajo-wrap');
+  var wM = document.getElementById('pnl-view-mkt-wrap');
+  if (bT && bM){
+    var on  = 'flex:1;padding:11px;border-radius:9px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:var(--f)';
+    var off = 'flex:1;padding:11px;border-radius:9px;border:1px solid #cbd5d0;background:#fff;color:var(--t2);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--f)';
+    bT.style.cssText = (view==='trabajo') ? on : off;
+    bM.style.cssText = (view==='marketing') ? on.replace('#1A5C3A','#8B5CF6').replace('#1A5C3A','#8B5CF6') : off;
+  }
+  if (wT) wT.style.display = (view==='trabajo') ? '' : 'none';
+  if (wM) wM.style.display = (view==='marketing') ? '' : 'none';
+  if (view==='marketing') renderMarketingView();
+}
+
+function renderMarketingView(){
+  var sel = document.getElementById('mkt-camp-sel');
+  var activas = _campanasActivas();
+  if (sel){
+    var currentVal = MKT_CAMPANA_ID || (activas[0]?activas[0].id:'');
+    sel.innerHTML = '<option value="">— Selecciona campaña —</option>' + activas.map(function(c){
+      return '<option value="'+c.id+'"'+(String(c.id)===String(currentVal)?' selected':'')+'>'+esc_(c.nombre)+'</option>';
+    }).join('');
+    if (currentVal) MKT_CAMPANA_ID = parseInt(currentVal);
+  }
+  renderMarketingList();
+}
+function onMktCampChange(v){ MKT_CAMPANA_ID = v ? parseInt(v) : null; renderMarketingList(); }
+
+function renderMarketingList(){
+  var el = document.getElementById('mkt-list');
+  var info = document.getElementById('mkt-info');
+  if (!el) return;
+  if (!MKT_CAMPANA_ID){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">🎁</div><p>Selecciona una campaña activa para ver el listado.</p></div>';
+    if (info) info.innerHTML = '';
+    return;
+  }
+  var camp = MARKETING_CAMPANAS.find(function(c){ return c.id === MKT_CAMPANA_ID; });
+  if (!camp){ el.innerHTML = '<div class="empty"><p>Campaña no encontrada.</p></div>'; return; }
+  var q = (document.getElementById('mkt-search')||{}).value || '';
+  var qn = normGpsName(q);
+  var panelMed = (PANEL[CU] || []).slice();
+  if (qn) panelMed = panelMed.filter(function(m){
+    return normGpsName(m.nombre||'').indexOf(qn)>=0
+      || normGpsName(m.ciudad||'').indexOf(qn)>=0
+      || normGpsName(m.especialidad||'').indexOf(qn)>=0;
+  });
+  panelMed.sort(function(a,b){ return (a.nombre||'').localeCompare(b.nombre||''); });
+
+  // Contadores
+  var sel = 0, ent = 0, disp = 0, tomOtro = 0;
+  panelMed.forEach(function(m){
+    var a = _findAsig(camp.id, m.nombre);
+    if (!a){ disp++; return; }
+    if (a.rep !== CU){ tomOtro++; return; }
+    if (a.estado === 'entregado') ent++;
+    else if (a.estado === 'seleccionado') sel++;
+  });
+  if (info){
+    var totalCamp = (MARKETING_ASIGNACIONES||[]).filter(function(a){ return a.campana_id===camp.id; }).length;
+    var cap = camp.cantidad_total ? (' · <b>Cupo total: '+camp.cantidad_total+'</b> · Asignados '+totalCamp) : '';
+    info.innerHTML = '<span style="color:#8B5CF6"><b>'+sel+'</b></span> seleccionados · <span style="color:#1A5C3A"><b>'+ent+'</b></span> entregados · '+disp+' disponibles · '+tomOtro+' tomados por otros'+cap;
+  }
+  if (!panelMed.length){ el.innerHTML = '<div class="empty"><p>Sin médicos en tu panel.</p></div>'; return; }
+  el.innerHTML = '<div class="card" style="padding:0;overflow:hidden">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12.5px">'
+    + '<thead><tr style="background:#F1F6F3"><th style="text-align:left;padding:9px 11px;font-weight:700;color:var(--t2)">Médico</th><th style="text-align:left;padding:9px 11px;font-weight:700;color:var(--t2)">Estado</th><th style="text-align:right;padding:9px 11px;font-weight:700;color:var(--t2)">Acción</th></tr></thead><tbody>'
+    + panelMed.map(function(m,i){
+        var bg = i%2?'#FBFDFC':'#fff';
+        var a = _findAsig(camp.id, m.nombre);
+        var estCell, actCell;
+        if (!a){
+          estCell = '<span style="color:var(--t3);font-size:11.5px">disponible</span>';
+          actCell = '<button onclick="mktSeleccionar('+camp.id+','+JSON.stringify({nombre:m.nombre,especialidad:m.especialidad||'',ciudad:m.ciudad||''}).replace(/"/g,'&quot;')+')" style="padding:6px 12px;border-radius:6px;border:1px solid #8B5CF6;background:#F3E8FF;color:#8B5CF6;font-weight:700;font-size:11.5px;cursor:pointer;font-family:var(--f)">+ Seleccionar</button>';
+        } else if (a.rep !== CU){
+          estCell = '<span style="color:#666;font-size:11.5px">Asignado a <b>'+esc_(a.rep)+'</b></span>';
+          actCell = '<span style="color:#999;font-size:11px">🔒 tomado</span>';
+        } else if (a.estado === 'entregado'){
+          estCell = '<span style="color:#1A5C3A;font-weight:700;font-size:11.5px">✓ Entregado '+(a.fecha_entrega?fmtShort(a.fecha_entrega):'')+'</span>';
+          actCell = '<button onclick="mktDesmarcar('+a.id+')" title="Cancelar asignación" style="padding:5px 9px;border-radius:6px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:11px;cursor:pointer;font-family:var(--f)">🗑</button>';
+        } else {
+          estCell = '<span style="color:#8B5CF6;font-weight:700;font-size:11.5px">🎁 Seleccionado</span>';
+          actCell = '<button onclick="mktDesmarcar('+a.id+')" title="Quitar de la campaña" style="padding:5px 9px;border-radius:6px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:11px;cursor:pointer;font-family:var(--f)">🗑</button>';
+        }
+        return '<tr style="background:'+bg+'"><td style="padding:9px 11px;border-bottom:1px solid #EEF3F0"><div style="font-weight:700">'+esc_(m.nombre)+'</div><div style="font-size:11px;color:var(--t3);margin-top:2px">'+esc_((m.especialidad||'')+' · '+(m.ciudad||''))+'</div></td>'
+          + '<td style="padding:9px 11px;border-bottom:1px solid #EEF3F0">'+estCell+'</td>'
+          + '<td style="padding:9px 11px;border-bottom:1px solid #EEF3F0;text-align:right;white-space:nowrap">'+actCell+'</td></tr>';
+      }).join('')
+    + '</tbody></table></div>';
+}
+
+// ── GERENTE: Marketing (CRUD campañas + consolidado + Excel) ──
+async function initGerMarketing(){
+  try { await Promise.all([loadMarketingCampanas(), loadMarketingAsignaciones()]); } catch(e){}
+  renderGerMarketing();
+}
+function renderGerMarketing(){
+  var el = document.getElementById('ger-mkt-list');
+  if (!el) return;
+  var cs = (MARKETING_CAMPANAS||[]).slice();
+  if (!cs.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">🎁</div><p>Sin campañas todavía. Crea una arriba.</p></div>';
+    return;
+  }
+  el.innerHTML = cs.map(function(c){
+    var asigs = (MARKETING_ASIGNACIONES||[]).filter(function(a){ return a.campana_id === c.id; });
+    var sel = asigs.filter(function(a){ return a.estado==='seleccionado'; }).length;
+    var ent = asigs.filter(function(a){ return a.estado==='entregado'; }).length;
+    var byRep = {};
+    asigs.forEach(function(a){ if (!byRep[a.rep]) byRep[a.rep]={sel:0,ent:0}; if (a.estado==='seleccionado') byRep[a.rep].sel++; else if (a.estado==='entregado') byRep[a.rep].ent++; });
+    var repsHtml = Object.keys(byRep).sort().map(function(r){
+      return '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:#F8FAFC;border-radius:5px;margin-bottom:3px;font-size:11.5px"><span><b>'+esc_(r)+'</b></span><span><span style="color:#8B5CF6">'+byRep[r].sel+' sel</span> · <span style="color:#1A5C3A">'+byRep[r].ent+' ent</span></span></div>';
+    }).join('') || '<p style="font-size:11.5px;color:var(--t3);padding:.4rem 0">Sin asignaciones aún.</p>';
+    var estCol = c.estado==='activa' ? '#1A5C3A' : '#666';
+    return '<div class="card" style="padding:12px 14px;margin-bottom:8px;border-left:4px solid '+estCol+'">'
+      + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:start;margin-bottom:6px">'
+      +   '<div><b style="font-size:14px">🎁 '+esc_(c.nombre)+'</b>'
+      +     '<div style="font-size:11.5px;color:var(--t2);margin-top:2px">'+esc_(c.descripcion||'')+(c.fecha_ini?' · '+fmtShort(c.fecha_ini):'')+(c.fecha_fin?' → '+fmtShort(c.fecha_fin):'')+(c.cantidad_total?' · Cupo '+c.cantidad_total:'')+'</div>'
+      +   '</div>'
+      +   '<span style="font-size:10.5px;color:#fff;background:'+estCol+';padding:3px 8px;border-radius:5px;font-weight:700">'+c.estado.toUpperCase()+'</span>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:8px">'
+      +   '<div style="text-align:center;padding:8px;background:#F3E8FF;border-radius:6px"><div style="font-size:20px;font-weight:700;color:#8B5CF6">'+sel+'</div><div style="font-size:10px;color:var(--t3);text-transform:uppercase">Seleccionados</div></div>'
+      +   '<div style="text-align:center;padding:8px;background:#DCFCE7;border-radius:6px"><div style="font-size:20px;font-weight:700;color:#1A5C3A">'+ent+'</div><div style="font-size:10px;color:var(--t3);text-transform:uppercase">Entregados</div></div>'
+      +   '<div style="text-align:center;padding:8px;background:#F1F5F9;border-radius:6px"><div style="font-size:20px;font-weight:700;color:var(--t1)">'+(sel+ent)+'</div><div style="font-size:10px;color:var(--t3);text-transform:uppercase">Total asignados</div></div>'
+      + '</div>'
+      + '<div style="margin-bottom:8px">'+repsHtml+'</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +   '<button onclick="exportMarketingExcel('+c.id+')" style="padding:8px 12px;border-radius:6px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:12px;cursor:pointer;font-family:var(--f)">📥 Excel</button>'
+      +   (c.estado==='activa' ? '<button onclick="cerrarCampana('+c.id+')" style="padding:8px 12px;border-radius:6px;border:1px solid #C47A0A;background:#fff;color:#C47A0A;font-weight:700;font-size:12px;cursor:pointer;font-family:var(--f)">🔒 Cerrar campaña</button>' : '<button onclick="reactivarCampana('+c.id+')" style="padding:8px 12px;border-radius:6px;border:1px solid #1A5C3A;background:#fff;color:#1A5C3A;font-weight:700;font-size:12px;cursor:pointer;font-family:var(--f)">🔓 Reactivar</button>')
+      +   '<button onclick="eliminarCampana('+c.id+')" style="padding:8px 12px;border-radius:6px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:12px;cursor:pointer;font-family:var(--f)">🗑 Eliminar</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+async function crearCampana(){
+  var nombre = document.getElementById('mkt-nombre').value.trim();
+  if (!nombre){ alert('Nombre de la campaña obligatorio.'); return; }
+  var payload = {
+    nombre: nombre,
+    descripcion: document.getElementById('mkt-desc').value.trim(),
+    fecha_ini: document.getElementById('mkt-ini').value || null,
+    fecha_fin: document.getElementById('mkt-fin').value || null,
+    cantidad_total: parseInt(document.getElementById('mkt-cant').value) || null,
+    estado: 'activa'
+  };
+  try {
+    var rows = await sbRequest('POST', '/marketing_campanas', payload);
+    if (rows && rows[0]) MARKETING_CAMPANAS.unshift(rows[0]);
+    ['mkt-nombre','mkt-desc','mkt-ini','mkt-fin','mkt-cant'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+    renderGerMarketing();
+    if (typeof showToast==='function') showToast('✓ Campaña creada');
+  } catch(e){ alert('Error: '+e.message); }
+}
+async function cerrarCampana(id){
+  if (!confirm('¿Cerrar campaña? Los reps ya no podrán seleccionar más médicos, pero podrán seguir marcando entregas de los ya seleccionados.')) return;
+  try {
+    await sbRequest('PATCH', '/marketing_campanas?id=eq.'+id, { estado:'cerrada' });
+    var c = MARKETING_CAMPANAS.find(function(x){ return x.id === id; });
+    if (c) c.estado = 'cerrada';
+    renderGerMarketing();
+  } catch(e){ alert('Error: '+e.message); }
+}
+async function reactivarCampana(id){
+  try {
+    await sbRequest('PATCH', '/marketing_campanas?id=eq.'+id, { estado:'activa' });
+    var c = MARKETING_CAMPANAS.find(function(x){ return x.id === id; });
+    if (c) c.estado = 'activa';
+    renderGerMarketing();
+  } catch(e){ alert('Error: '+e.message); }
+}
+async function eliminarCampana(id){
+  if (!confirm('¿ELIMINAR la campaña? Se borrarán TODAS las asignaciones asociadas. Esta acción es irreversible.')) return;
+  try {
+    await sbRequest('DELETE', '/marketing_campanas?id=eq.'+id);
+    MARKETING_CAMPANAS = MARKETING_CAMPANAS.filter(function(c){ return c.id !== id; });
+    MARKETING_ASIGNACIONES = MARKETING_ASIGNACIONES.filter(function(a){ return a.campana_id !== id; });
+    renderGerMarketing();
+  } catch(e){ alert('Error: '+e.message); }
+}
+function exportMarketingExcel(campId){
+  var c = MARKETING_CAMPANAS.find(function(x){ return x.id === campId; });
+  var asigs = (MARKETING_ASIGNACIONES||[]).filter(function(a){ return a.campana_id === campId; });
+  if (!asigs.length){ alert('Sin asignaciones en esta campaña.'); return; }
+  if (typeof XLSX === 'undefined'){ alert('Librería XLSX no cargada.'); return; }
+  var rows = asigs.map(function(a){
+    return {
+      Campaña: c?c.nombre:'',
+      Rep: a.rep,
+      Médico: a.medico,
+      Especialidad: a.especialidad||'',
+      Ciudad: a.ciudad||'',
+      Estado: a.estado,
+      'Fecha entrega': a.fecha_entrega||'',
+      Comentario: a.comentario||'',
+      'Creado el': (a.created_at||'').slice(0,10)
+    };
+  });
+  rows.sort(function(a,b){ return (a.Rep||'').localeCompare(b.Rep||'') || (a.Médico||'').localeCompare(b.Médico||''); });
+  var ws = XLSX.utils.json_to_sheet(rows);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Detalle');
+  var nombreArch = 'Marketing_'+(c?c.nombre.replace(/[^A-Za-z0-9_]/g,'_'):'campana')+'.xlsx';
+  XLSX.writeFile(wb, nombreArch);
 }
 
 // ── PANELES (Mis médicos / Mis farmacias con GPS) ──
@@ -2813,12 +3852,29 @@ function pnlSwitch(mode){
   }
   var s = document.getElementById('pnl-search');
   if (s) s.value = '';
+  // Alternar botones y cards según modo
+  var btnAlta = document.getElementById('pnl-btn-alta');
+  var cardSol = document.getElementById('pnl-solicitudes-card');
+  var btnAltaF = document.getElementById('pnl-btn-alta-farm');
+  var cardSolF = document.getElementById('pnl-farm-solicitudes-card');
+  if (btnAlta)  btnAlta.style.display  = (mode==='medicos') ? '' : 'none';
+  if (cardSol)  cardSol.style.display  = (mode==='medicos') ? '' : 'none';
+  if (btnAltaF) btnAltaF.style.display = (mode==='farmacias') ? '' : 'none';
+  if (cardSolF) cardSolF.style.display = (mode==='farmacias') ? '' : 'none';
   renderPanelList();
+  if (mode==='medicos') renderMisSolicitudes();
+  else if (mode==='farmacias') renderMisFarmSolicitudes();
 }
 async function initMisPaneles(){
   // asegura ubicaciones al día
   try { if (typeof loadUbicaciones === 'function') await loadUbicaciones(CU); } catch(e){}
   if (!UBIC_NORM_IDX) rebuildUbicIndex();
+  // Recarga solicitudes/pares y marketing
+  try { await loadPanelSolicitudes(); } catch(e){}
+  try { await loadFarmSolicitudes(); } catch(e){}
+  try { if (Object.keys(REP_PAIRS||{}).length === 0) await loadRepPairs(); } catch(e){}
+  try { await loadMarketingCampanas(); } catch(e){}
+  try { await loadMarketingAsignaciones(); } catch(e){}
   pnlSwitch(PNL_MODE || 'medicos');
 }
 function _pnlHasGpsMed(rep, nombre){
@@ -2861,16 +3917,22 @@ function renderPanelList(){
          + '<th style="text-align:left;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">Ciudad</th>'
          + '<th style="text-align:left;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">Esp.</th>'
          + '<th style="text-align:left;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">Nombre / Dirección</th>'
-         + '<th style="text-align:right;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">GPS</th>'
+         + '<th style="text-align:right;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">Acciones</th>'
          + '</tr></thead><tbody>';
     list.forEach(function(m, i){
       var u = _pnlHasGpsMed(CU, m.nombre);
       var bg = i%2 ? '#FBFDFC' : '#fff';
+      var nomJs = (m.nombre||'').replace(/'/g, "\\'");
+      var espJs = (m.especialidad||'').replace(/'/g, "\\'");
+      var ciuJs = (m.ciudad||'').replace(/'/g, "\\'");
+      var dirJs = (m.direccion||'').replace(/'/g, "\\'");
+      var tipJs = (m.tipo||'').replace(/'/g, "\\'");
+      var bajaBtn = '<button onclick="solicitarBajaMedico(\''+nomJs+'\',\''+espJs+'\',\''+ciuJs+'\',\''+dirJs+'\',\''+tipJs+'\')" title="Solicitar baja de este médico" style="display:inline-block;padding:6px 8px;border-radius:6px;background:#fff;border:1px solid #C0392B;color:#C0392B;font-size:11px;font-weight:700;cursor:pointer;margin-left:4px;font-family:var(--f)">❌ Baja</button>';
       html += '<tr style="background:'+bg+'">'
            +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top;white-space:nowrap">'+(m.ciudad||'-')+'</td>'
            +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top;white-space:nowrap">'+(m.especialidad||'-')+'</td>'
            +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top"><div style="font-weight:700;color:var(--t1)">'+(m.nombre||'')+'</div><div style="color:var(--t3);font-size:11.5px;margin-top:2px">'+(m.direccion||'<i>Sin dirección</i>')+'</div></td>'
-           +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top;text-align:right">'+_pnlGpsBtn(u, m.nombre)+'</td>'
+           +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top;text-align:right;white-space:nowrap">'+_pnlGpsBtn(u, m.nombre)+bajaBtn+'</td>'
            +  '</tr>';
     });
     html += '</tbody></table></div>';
@@ -2896,16 +3958,23 @@ function renderPanelList(){
           + '<th style="text-align:left;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">Ciudad</th>'
           + '<th style="text-align:left;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">Cadena</th>'
           + '<th style="text-align:left;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">PDV / Dirección</th>'
-          + '<th style="text-align:right;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">GPS</th>'
+          + '<th style="text-align:right;padding:8px 10px;font-weight:700;color:var(--t2);border-bottom:1px solid #E1EAE4">Acciones</th>'
           + '</tr></thead><tbody>';
     flist.forEach(function(f, i){
       var u = _pnlHasGpsFarm(f.cod);
       var bg = i%2 ? '#FBFDFC' : '#fff';
+      var codJs = String(f.cod||'').replace(/'/g, "\\'");
+      var pdvJs = String(f.pdv||'').replace(/'/g, "\\'");
+      var cadJs = String(f.cadena||'').replace(/'/g, "\\'");
+      var ciuJs = String(f.ciudad||'').replace(/'/g, "\\'");
+      var dirJs = String(f.dir||'').replace(/'/g, "\\'");
+      var zonJs = String(f.zona||'').replace(/'/g, "\\'");
+      var bajaBtn = '<button onclick="solicitarBajaFarmacia(\''+codJs+'\',\''+pdvJs+'\',\''+cadJs+'\',\''+ciuJs+'\',\''+dirJs+'\',\''+zonJs+'\')" title="Solicitar baja de esta farmacia" style="display:inline-block;padding:6px 8px;border-radius:6px;background:#fff;border:1px solid #C0392B;color:#C0392B;font-size:11px;font-weight:700;cursor:pointer;margin-left:4px;font-family:var(--f)">❌ Baja</button>';
       html2 += '<tr style="background:'+bg+'">'
             +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top;white-space:nowrap">'+(f.ciudad||'-')+'</td>'
             +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top;white-space:nowrap">'+(f.cadena||'-')+'</td>'
             +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top"><div style="font-weight:700;color:var(--t1)">'+(f.pdv||'')+'</div><div style="color:var(--t3);font-size:11.5px;margin-top:2px">'+(f.dir||'<i>Sin dirección</i>')+' · <span style="color:#999">'+(f.cod||'')+'</span></div></td>'
-            +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top;text-align:right">'+_pnlGpsBtn(u, f.pdv)+'</td>'
+            +  '<td style="padding:8px 10px;border-bottom:1px solid #EEF3F0;vertical-align:top;text-align:right;white-space:nowrap">'+_pnlGpsBtn(u, f.pdv)+bajaBtn+'</td>'
             +  '</tr>';
     });
     html2 += '</tbody></table></div>';
@@ -3007,9 +4076,11 @@ function selOne(el,gid){
     if(ta){ ta.placeholder=isNE?'Ej: Consultorio cerrado, médico de vacaciones, atendiendo en clínica...':'Ej: El Dr. se comprometió a probar Condrosol Trio con sus próximos pacientes...'; }
     if(typeof visitMode === 'undefined' || visitMode !== 'farm'){
       const pc=document.getElementById('card-productos');
-      const mc=document.getElementById('card-material');
+      const oc=document.getElementById('card-obsequios');
       if(pc) pc.style.display=isNE?'none':'block';
-      if(mc) mc.style.display=isNE?'none':'block';
+      // Los obsequios no aplican si no encontró al médico
+      if(oc && isNE) oc.style.display = 'none';
+      else if (!isNE) renderObsequiosCard();
     }
   }
 }
@@ -3041,8 +4112,29 @@ function selectDoc(nombre){
     (doc.tipo?'['+doc.tipo+'] ':'')+doc.especialidad+' · '+doc.ciudad+(doc.direccion?' · '+doc.direccion:'');
   document.getElementById('seldoc').classList.add('show');
   try{gpsOnSelect('medico');}catch(e){}
+  try{ renderObsequiosCard(); }catch(e){}
 }
-function clearDoc(){ selDoc=null; document.getElementById('seldoc').classList.remove('show'); document.getElementById('dsearch').value=''; try{gpsOnClear('medico');}catch(e){} }
+function clearDoc(){ selDoc=null; document.getElementById('seldoc').classList.remove('show'); document.getElementById('dsearch').value=''; try{gpsOnClear('medico');}catch(e){} try{ renderObsequiosCard(); }catch(e){} }
+
+// Renderiza el bloque de "Obsequios de campaña" en Registro según el médico seleccionado
+function renderObsequiosCard(){
+  var card = document.getElementById('card-obsequios');
+  var listEl = document.getElementById('obseq-list');
+  if (!card || !listEl) return;
+  if (!selDoc){ card.style.display = 'none'; listEl.innerHTML = ''; return; }
+  var pends = asignacionesPendientesPara(selDoc.nombre);
+  if (!pends.length){ card.style.display = 'none'; listEl.innerHTML = ''; return; }
+  card.style.display = '';
+  listEl.innerHTML = pends.map(function(a){
+    var camp = MARKETING_CAMPANAS.find(function(c){ return c.id === a.campana_id; });
+    var nombre = camp ? camp.nombre : ('Campaña #'+a.campana_id);
+    return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E9D5FF;border-radius:8px;background:#fff;margin-bottom:6px;cursor:pointer">'
+      + '<input type="checkbox" class="obseq-check" data-asig-id="'+a.id+'" style="width:20px;height:20px;accent-color:#8B5CF6;flex-shrink:0">'
+      + '<div style="flex:1"><div style="font-size:13.5px;font-weight:700;color:#8B5CF6">🎁 '+esc_(nombre)+'</div>'
+      +   (camp && camp.descripcion ? '<div style="font-size:11.5px;color:var(--t3);margin-top:2px">'+esc_(camp.descripcion)+'</div>' : '')
+      + '</div></label>';
+  }).join('');
+}
 document.addEventListener('click', e=>{ if(!e.target.closest('#t-reg .card')) document.getElementById('dlist').classList.remove('open'); });
 
 // ── GUARDAR ──
@@ -3077,11 +4169,11 @@ function setVisitMode(mode) {
   if (cardMed)  cardMed.style.display  = isFarm ? 'none' : '';
   if (cardFarm) cardFarm.style.display  = isFarm ? '' : 'none';
 
-  // Toggle product/material cards (only for médico)
+  // Toggle product card (only for médico) — material promocional fue reemplazado por obsequios de campaña
   var cardProd = document.getElementById('card-productos');
-  var cardMat  = document.getElementById('card-material');
+  var cardObs  = document.getElementById('card-obsequios');
   if (cardProd) cardProd.style.display = isFarm ? 'none' : '';
-  if (cardMat)  cardMat.style.display  = isFarm ? 'none' : '';
+  if (isFarm && cardObs) cardObs.style.display = 'none'; // en farmacia nunca se muestra
 
   // Toggle objetivo field (only for farmacia)
   var farmObj = document.getElementById('farm-objetivo-field');
@@ -3321,6 +4413,21 @@ function guardar(){
     comentario:cmt,ts:new Date().toISOString()};
   visits.push(v); save();
   pushVisitToCloud(v); // sync a la nube
+  // Marcar obsequios entregados (si el rep marcó los checkboxes de la campaña)
+  try {
+    var obsCheck = document.querySelectorAll('#obseq-list .obseq-check');
+    var deliveredNames = [];
+    obsCheck.forEach(function(cb){
+      if (cb.checked){
+        var aid = parseInt(cb.getAttribute('data-asig-id'));
+        if (aid){
+          mktMarcarEntregado(aid, 'Entregado en visita del '+v.fecha).then(function(ok){
+            if (ok) { try { renderMarketingList(); } catch(e){} }
+          });
+        }
+      }
+    });
+  } catch(e){ /* no bloquear guardado por error de marketing */ }
   clearDoc();
   document.querySelectorAll('#prod-chips input[type=checkbox]').forEach(c=>{ c.checked=false; });
   document.querySelectorAll('#prod-chips .qty-wrap').forEach(w=>{ w.classList.remove('active'); });
