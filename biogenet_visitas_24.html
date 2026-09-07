@@ -2184,7 +2184,7 @@ async function validateRepAccess(rep) {
 // ═══════════════════════════════════════════════════════════
 // SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION = '2026-09-02-142000';
+const APP_VERSION = '2026-09-02-150000';
 
 async function checkForUpdates() {
   try {
@@ -3340,12 +3340,28 @@ async function solicitarBajaMedico(nombre, esp, ciudad, dir, tipo){
     direccion: dir||'', tipo_medico: tipo||'', motivo: motivo
   });
 }
+// Solicitudes rechazadas/aprobadas ocultas por el rep (solo local, no toca Supabase)
+function _getDismissedSolic(){ try { return JSON.parse(localStorage.getItem('bg_solic_dismissed_med')||'[]'); } catch(e){ return []; } }
+function _saveDismissedSolic(a){ try { localStorage.setItem('bg_solic_dismissed_med', JSON.stringify(a)); } catch(e){} }
+function limpiarSolicitudesLeidas(){
+  var mias = (PANEL_SOLICITUDES||[]).filter(function(s){ return s.rep_solicita === CU && (s.estado==='aprobada' || s.estado==='rechazada'); });
+  var current = _getDismissedSolic();
+  var set = {};
+  current.forEach(function(id){ set[id]=1; });
+  mias.forEach(function(s){ set[s.id]=1; });
+  _saveDismissedSolic(Object.keys(set).map(Number));
+  renderMisSolicitudes();
+  if (typeof showToast==='function') showToast('🧹 Historial limpio');
+}
 // Renderiza "Mis solicitudes" + "Solicitudes de mi compañero"
 function renderMisSolicitudes(){
   var el = document.getElementById('pnl-solicitudes');
   if (!el) return;
-  var mias = (PANEL_SOLICITUDES||[]).filter(function(s){ return s.rep_solicita === CU; });
+  var dismissed = _getDismissedSolic();
+  var dset = {}; dismissed.forEach(function(id){ dset[id]=1; });
+  var mias = (PANEL_SOLICITUDES||[]).filter(function(s){ return s.rep_solicita === CU && !dset[s.id]; });
   var deComp = (PANEL_SOLICITUDES||[]).filter(function(s){ return s.rep_companero === CU && s.estado === 'pendiente_companero'; });
+  var resueltasVisibles = mias.filter(function(s){ return s.estado==='aprobada' || s.estado==='rechazada'; }).length;
   var html = '';
   // Sección 1: solicitudes pendientes de mi confirmación como compañero
   if (deComp.length){
@@ -3366,7 +3382,9 @@ function renderMisSolicitudes(){
   }
   // Sección 2: mis solicitudes recientes
   if (mias.length){
-    html += '<div style="font-size:12px;font-weight:700;color:var(--t2);margin:.9rem 0 .4rem 0;text-transform:uppercase;letter-spacing:.03em">📋 Mis solicitudes recientes ('+mias.length+')</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin:.9rem 0 .4rem 0"><div style="font-size:12px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.03em">📋 Mis solicitudes recientes ('+mias.length+')</div>'
+      + (resueltasVisibles>0 ? '<button onclick="limpiarSolicitudesLeidas()" style="padding:5px 10px;border-radius:6px;border:1px solid #cbd5d0;background:#fff;color:var(--t2);font-weight:600;font-size:11px;cursor:pointer;font-family:var(--f)">🧹 Limpiar leídas ('+resueltasVisibles+')</button>' : '')
+      + '</div>';
     html += mias.slice(0,15).map(function(s){
       var estadoCol = {'pendiente_companero':'#C47A0A','pendiente_gerente':'#1565C0','aprobada':'#1A5C3A','rechazada':'#C0392B'}[s.estado] || '#666';
       var estadoLbl = {'pendiente_companero':'Espera compañero','pendiente_gerente':'Espera gerente','aprobada':'Aprobada','rechazada':'Rechazada'}[s.estado] || s.estado;
@@ -3529,12 +3547,26 @@ async function solicitarBajaFarmacia(cod, pdv, cadena, ciudad, dir, zona){
     ciudad: ciudad||'', direccion: dir||'', zona: zona||'', motivo: motivo
   });
 }
+function _getDismissedFarmSolic(){ try { return JSON.parse(localStorage.getItem('bg_solic_dismissed_farm')||'[]'); } catch(e){ return []; } }
+function _saveDismissedFarmSolic(a){ try { localStorage.setItem('bg_solic_dismissed_farm', JSON.stringify(a)); } catch(e){} }
+function limpiarFarmSolicitudesLeidas(){
+  var mias = (FARM_SOLICITUDES||[]).filter(function(s){ return s.rep_solicita === CU && (s.estado==='aprobada' || s.estado==='rechazada'); });
+  var set = {};
+  _getDismissedFarmSolic().forEach(function(id){ set[id]=1; });
+  mias.forEach(function(s){ set[s.id]=1; });
+  _saveDismissedFarmSolic(Object.keys(set).map(Number));
+  renderMisFarmSolicitudes();
+  if (typeof showToast==='function') showToast('🧹 Historial limpio');
+}
 function renderMisFarmSolicitudes(){
   var el = document.getElementById('pnl-farm-solicitudes');
   if (!el) return;
-  var mias = (FARM_SOLICITUDES||[]).filter(function(s){ return s.rep_solicita === CU; });
+  var dset = {}; _getDismissedFarmSolic().forEach(function(id){ dset[id]=1; });
+  var mias = (FARM_SOLICITUDES||[]).filter(function(s){ return s.rep_solicita === CU && !dset[s.id]; });
   if (!mias.length){ el.innerHTML = '<div style="font-size:12px;color:var(--t3);padding:.5rem 0">Sin solicitudes.</div>'; return; }
-  el.innerHTML = mias.slice(0,15).map(function(s){
+  var resueltasVisibles = mias.filter(function(s){ return s.estado==='aprobada' || s.estado==='rechazada'; }).length;
+  var head = resueltasVisibles>0 ? '<div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="limpiarFarmSolicitudesLeidas()" style="padding:5px 10px;border-radius:6px;border:1px solid #cbd5d0;background:#fff;color:var(--t2);font-weight:600;font-size:11px;cursor:pointer;font-family:var(--f)">🧹 Limpiar leídas ('+resueltasVisibles+')</button></div>' : '';
+  el.innerHTML = head + mias.slice(0,15).map(function(s){
     var estadoCol = {'pendiente_gerente':'#1565C0','aprobada':'#1A5C3A','rechazada':'#C0392B'}[s.estado] || '#666';
     var estadoLbl = {'pendiente_gerente':'Espera gerente','aprobada':'Aprobada','rechazada':'Rechazada'}[s.estado] || s.estado;
     var tipoLbl = s.tipo==='alta' ? '➕ Alta' : '❌ Baja';
