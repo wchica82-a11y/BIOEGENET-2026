@@ -2184,7 +2184,7 @@ async function validateRepAccess(rep) {
 // ═══════════════════════════════════════════════════════════
 // SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION = '2026-09-02-150000';
+const APP_VERSION = '2026-09-02-160000';
 
 async function checkForUpdates() {
   try {
@@ -3650,15 +3650,55 @@ async function mktDesmarcar(asigId){
     if (typeof showToast==='function') showToast('Removido de la campaña');
   } catch(e){ alert('Error: '+e.message); }
 }
-async function mktMarcarEntregado(asigId, comentario){
+async function mktMarcarEntregado(asigId, comentario, fecha){
   try {
-    var body = { estado:'entregado', fecha_entrega: (typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10)) };
+    var body = { estado:'entregado', fecha_entrega: fecha || (typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10)) };
     if (comentario) body.comentario = comentario;
     var rows = await sbRequest('PATCH', '/marketing_asignaciones?id=eq.'+asigId, body);
     var idx = MARKETING_ASIGNACIONES.findIndex(function(a){ return a.id === asigId; });
     if (idx >= 0 && rows && rows[0]) MARKETING_ASIGNACIONES[idx] = rows[0];
     return true;
   } catch(e){ console.warn('mktMarcarEntregado falló:', e.message); return false; }
+}
+// UI: marcar UN seleccionado como entregado (pide comentario + fecha)
+async function mktEntregarUno(asigId){
+  var hoy = (typeof todayISO==='function' ? todayISO() : new Date().toISOString().slice(0,10));
+  var fecha = prompt('Fecha de entrega (YYYY-MM-DD):', hoy);
+  if (!fecha) return;
+  fecha = fecha.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){ alert('Fecha inválida. Formato: 2026-08-15'); return; }
+  var com = prompt('Comentario (opcional, ej: "Cena en Rincón Costa"):', '');
+  if (com === null) return;
+  var ok = await mktMarcarEntregado(asigId, com.trim(), fecha);
+  if (ok){
+    renderMarketingList();
+    if (typeof showToast==='function') showToast('✓ Marcado como entregado');
+  } else {
+    alert('Error al marcar entregado.');
+  }
+}
+// UI: marcar TODOS los seleccionados de la campaña actual como entregados (fecha + comentario común)
+async function mktEntregarTodos(){
+  if (!MKT_CAMPANA_ID) return;
+  var pendMios = (MARKETING_ASIGNACIONES||[]).filter(function(a){
+    return a.campana_id === MKT_CAMPANA_ID && a.rep === CU && a.estado === 'seleccionado';
+  });
+  if (!pendMios.length){ alert('No tienes médicos seleccionados pendientes en esta campaña.'); return; }
+  var hoy = (typeof todayISO==='function' ? todayISO() : new Date().toISOString().slice(0,10));
+  var fecha = prompt('Fecha de entrega para los '+pendMios.length+' médicos (YYYY-MM-DD):', hoy);
+  if (!fecha) return;
+  fecha = fecha.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){ alert('Fecha inválida. Formato: 2026-08-15'); return; }
+  var com = prompt('Comentario común (opcional, ej: "Cena Rincón Costa, 8 asistentes"):', '');
+  if (com === null) return;
+  if (!confirm('¿Marcar los '+pendMios.length+' médicos seleccionados como entregados con fecha '+fecha+'?')) return;
+  var okCount = 0;
+  for (var i=0; i<pendMios.length; i++){
+    var ok = await mktMarcarEntregado(pendMios[i].id, com.trim(), fecha);
+    if (ok) okCount++;
+  }
+  renderMarketingList();
+  if (typeof showToast==='function') showToast('✓ '+okCount+' de '+pendMios.length+' marcados como entregados');
 }
 
 function switchPnlView(view){
@@ -3725,7 +3765,8 @@ function renderMarketingList(){
   if (info){
     var totalCamp = (MARKETING_ASIGNACIONES||[]).filter(function(a){ return a.campana_id===camp.id; }).length;
     var cap = camp.cantidad_total ? (' · <b>Cupo total: '+camp.cantidad_total+'</b> · Asignados '+totalCamp) : '';
-    info.innerHTML = '<span style="color:#8B5CF6"><b>'+sel+'</b></span> seleccionados · <span style="color:#1A5C3A"><b>'+ent+'</b></span> entregados · '+disp+' disponibles · '+tomOtro+' tomados por otros'+cap;
+    var bulkBtn = sel>0 ? '<div style="margin-top:8px"><button onclick="mktEntregarTodos()" style="width:100%;padding:10px;border-radius:8px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:var(--f)">✓ Marcar todos los seleccionados ('+sel+') como entregados</button><div style="font-size:10.5px;color:var(--t3);margin-top:4px;text-align:center">Útil para cenas, congresos u otros eventos grupales</div></div>' : '';
+    info.innerHTML = '<span style="color:#8B5CF6"><b>'+sel+'</b></span> seleccionados · <span style="color:#1A5C3A"><b>'+ent+'</b></span> entregados · '+disp+' disponibles · '+tomOtro+' tomados por otros'+cap+bulkBtn;
   }
   if (!panelMed.length){ el.innerHTML = '<div class="empty"><p>Sin médicos en tu panel.</p></div>'; return; }
   el.innerHTML = '<div class="card" style="padding:0;overflow:hidden">'
@@ -3746,7 +3787,8 @@ function renderMarketingList(){
           actCell = '<button onclick="mktDesmarcar('+a.id+')" title="Cancelar asignación" style="padding:5px 9px;border-radius:6px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:11px;cursor:pointer;font-family:var(--f)">🗑</button>';
         } else {
           estCell = '<span style="color:#8B5CF6;font-weight:700;font-size:11.5px">🎁 Seleccionado</span>';
-          actCell = '<button onclick="mktDesmarcar('+a.id+')" title="Quitar de la campaña" style="padding:5px 9px;border-radius:6px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:11px;cursor:pointer;font-family:var(--f)">🗑</button>';
+          actCell = '<button onclick="mktEntregarUno('+a.id+')" title="Marcar como entregado" style="padding:6px 10px;border-radius:6px;border:1px solid #1A5C3A;background:#1A5C3A;color:#fff;font-weight:700;font-size:11.5px;cursor:pointer;font-family:var(--f);margin-right:3px">✓ Entregar</button>'
+            + '<button onclick="mktDesmarcar('+a.id+')" title="Quitar de la campaña" style="padding:5px 9px;border-radius:6px;border:1px solid #C0392B;background:#fff;color:#C0392B;font-weight:700;font-size:11px;cursor:pointer;font-family:var(--f)">🗑</button>';
         }
         return '<tr style="background:'+bg+'"><td style="padding:9px 11px;border-bottom:1px solid #EEF3F0"><div style="font-weight:700">'+esc_(m.nombre)+'</div><div style="font-size:11px;color:var(--t3);margin-top:2px">'+esc_((m.especialidad||'')+' · '+(m.ciudad||''))+'</div></td>'
           + '<td style="padding:9px 11px;border-bottom:1px solid #EEF3F0">'+estCell+'</td>'
