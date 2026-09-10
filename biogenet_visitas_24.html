@@ -580,14 +580,45 @@ textarea{resize:none;height:88px;line-height:1.5}
         </div>
         <p style="font-size:11.5px;color:var(--t3);margin-bottom:.7rem">Completa los datos. La solicitud pasa primero a tu compañero para confirmar, luego al gerente para aprobación final.</p>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <input id="sa-nombre" placeholder="Nombre completo del médico *" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
-          <input id="sa-esp" placeholder="Especialidad" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
-          <input id="sa-ciudad" placeholder="Ciudad" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="sa-apellidos" placeholder="Apellidos * (2 apellidos, ej: PEREZ GOMEZ)" oninput="this.value=this.value.toUpperCase()" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px;text-transform:uppercase">
+          <input id="sa-nombres" placeholder="Nombres * (2 nombres, ej: JUAN CARLOS)" oninput="this.value=this.value.toUpperCase()" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px;text-transform:uppercase">
+          <select id="sa-esp" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+            <option value="">— Selecciona especialidad * —</option>
+            <option>ACUPUNTURA</option><option>ALERGOLOGIA</option><option>ALGOLOGIA</option>
+            <option>ANESTESIOLOGIA</option><option>ANGIOLOGIA Y CIRUGIA VASCULAR</option>
+            <option>BARIATRIA</option><option>CARDIOLOGIA</option>
+            <option>CIRUGIA CARDIOVASCULAR</option><option>CIRUGIA GENERAL</option><option>CIRUGIA PLASTICA</option>
+            <option>COLOPROCTOLOGIA</option><option>DEPORTOLOGIA</option>
+            <option>DERMATOLOGIA</option><option>DIABETOLOGIA</option>
+            <option>ECOGRAFISTA</option><option>EMERGENCIOLOGIA</option>
+            <option>ENDOCRINOLOGIA</option><option>FISIATRIA</option>
+            <option>FISIOTERAPIA</option><option>FLEBOLOGIA</option>
+            <option>GASTROENTEROLOGIA</option><option>GERIATRIA</option>
+            <option>GINECOLOGIA Y OBSTETRICIA</option><option>HEMATOLOGIA</option>
+            <option>HEPATOLOGIA</option><option>HOMEOPATIA</option>
+            <option>INFECTOLOGIA</option><option>MEDICINA ESTETICA</option>
+            <option>MEDICINA FAMILIAR</option><option>MEDICINA GENERAL</option>
+            <option>MEDICINA INTENSIVA</option><option>MEDICINA INTERNA</option>
+            <option>MEDICINA OCUPACIONAL</option><option>NEFROLOGIA</option>
+            <option>NEONATOLOGIA</option><option>NEUMOLOGIA</option>
+            <option>NEUMOTISIOLOGIA</option><option>NEUROCIRUGIA</option>
+            <option>NEUROLOGIA</option><option>NUTRICION</option>
+            <option>ODONTOLOGIA</option><option>OFTALMOLOGIA</option>
+            <option>ONCOLOGIA</option><option>ORTOPEDIA</option>
+            <option>OTORRINOLARINGOLOGIA</option><option>PATOLOGIA</option>
+            <option>PEDIATRIA</option><option>PSICOLOGIA</option>
+            <option>PSIQUIATRIA</option><option>REUMATOLOGIA</option>
+            <option>SEXOLOGIA</option><option>TRAUMATOLOGIA</option><option>UROLOGIA</option>
+          </select>
           <input id="sa-dir" placeholder="Dirección" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="sa-provincia" placeholder="Provincia" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="sa-ciudad" placeholder="Ciudad" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
           <select id="sa-tipo" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
             <option value="CIU">Ciudad (CIU)</option>
             <option value="GIR">Gira (GIR)</option>
           </select>
+          <input id="sa-zona" placeholder="Zona" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
+          <input id="sa-cedula" placeholder="Cédula" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px">
           <textarea id="sa-motivo" placeholder="Motivo del alta (opcional)" rows="2" style="padding:9px;border:1px solid #cbd5d0;border-radius:7px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
         </div>
         <div style="display:flex;gap:8px;margin-top:.9rem">
@@ -2184,7 +2215,7 @@ async function validateRepAccess(rep) {
 // ═══════════════════════════════════════════════════════════
 // SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION = '2026-09-02-160000';
+const APP_VERSION = '2026-09-10-110000';
 
 async function checkForUpdates() {
   try {
@@ -3045,7 +3076,7 @@ function renderGerSolicitudes(){
       return '<div class="card" style="padding:12px 14px;margin-bottom:8px;border-left:4px solid '+col+'">'
         + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:start;margin-bottom:6px">'
         +   '<div><b style="color:'+col+';font-size:13px">'+lbl+' MÉDICO — '+esc_(s.nombre)+'</b>'
-        +     '<div style="font-size:11.5px;color:var(--t2);margin-top:2px">'+esc_((s.especialidad||'')+(s.ciudad?' · '+s.ciudad:'')+(s.tipo_medico?' · '+s.tipo_medico:''))+(s.direccion?'<br>'+esc_(s.direccion):'')+'</div>'
+        +     '<div style="font-size:11.5px;color:var(--t2);margin-top:2px">'+esc_((s.especialidad||'')+(s.provincia?' · '+s.provincia:'')+(s.ciudad?' · '+s.ciudad:'')+(s.tipo_medico?' · '+s.tipo_medico:'')+(s.zona?' · Zona '+s.zona:''))+(s.direccion?'<br>'+esc_(s.direccion):'')+(s.cedula?'<br>Cédula: '+esc_(s.cedula):'')+'</div>'
         +   '</div>'
         +   '<span style="font-size:10.5px;color:#fff;background:'+estCol+';padding:3px 8px;border-radius:5px;font-weight:700;white-space:nowrap">'+estLbl+'</span>'
         + '</div>'
@@ -3229,10 +3260,15 @@ async function submitSolicitud(tipo, data){
     rep_solicita: CU,
     rep_companero: comp,
     nombre: (data.nombre||'').trim(),
+    apellidos: data.apellidos||'',
+    nombres: data.nombres||'',
     especialidad: data.especialidad||'',
+    provincia: data.provincia||'',
     ciudad: data.ciudad||'',
     direccion: data.direccion||'',
     tipo_medico: data.tipo_medico||'',
+    zona: data.zona||'',
+    cedula: data.cedula||'',
     motivo: (data.motivo||'').trim(),
     estado: 'pendiente_companero'
   };
@@ -3288,10 +3324,15 @@ async function gerenteAprobarSolicitud(id){
       rep: s.rep_solicita,
       accion: s.tipo === 'alta' ? 'add' : 'remove',
       nombre: s.nombre,
+      apellidos: s.apellidos||'',
+      nombres: s.nombres||'',
       especialidad: s.especialidad||'',
+      provincia: s.provincia||'',
       ciudad: s.ciudad||'',
       direccion: s.direccion||'',
       tipo_medico: s.tipo_medico||'',
+      zona: s.zona||'',
+      cedula: s.cedula||'',
       source_solicitud: s.id
     };
     await sbRequest('POST', '/panel_overrides', override);
@@ -3312,19 +3353,35 @@ async function gerenteAprobarSolicitud(id){
 function openSolicitudAlta(){
   var m = document.getElementById('modal-alta-med');
   if (!m) return;
-  ['sa-nombre','sa-esp','sa-ciudad','sa-dir','sa-motivo'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  ['sa-apellidos','sa-nombres','sa-dir','sa-provincia','sa-ciudad','sa-zona','sa-cedula','sa-motivo'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  var e = document.getElementById('sa-esp'); if (e) e.value = '';
   var t = document.getElementById('sa-tipo'); if (t) t.value = 'CIU';
   m.style.display = 'flex';
 }
 function closeSolicitudAlta(){ var m=document.getElementById('modal-alta-med'); if (m) m.style.display='none'; }
 async function submitSolicitudAlta(){
+  var apellidos = document.getElementById('sa-apellidos').value.trim().toUpperCase();
+  var nombres   = document.getElementById('sa-nombres').value.trim().toUpperCase();
+  var especialidad = document.getElementById('sa-esp').value;
+  if (!apellidos){ alert('Los apellidos son obligatorios (2 apellidos).'); return; }
+  if (!nombres){ alert('Los nombres son obligatorios (2 nombres).'); return; }
+  if (!especialidad){ alert('La especialidad es obligatoria — selecciona una de la lista.'); return; }
+  // Validación suave: 2 palabras en cada campo
+  if (apellidos.split(/\s+/).length < 2){ if (!confirm('Los apellidos parecen no tener 2 apellidos. ¿Continuar de todas formas?')) return; }
+  if (nombres.split(/\s+/).length < 2){ if (!confirm('Los nombres parecen no tener 2 nombres. ¿Continuar de todas formas?')) return; }
+  var nombreCompleto = apellidos + ' ' + nombres;
   var data = {
-    nombre:      document.getElementById('sa-nombre').value,
-    especialidad: document.getElementById('sa-esp').value,
-    ciudad:      document.getElementById('sa-ciudad').value,
-    direccion:   document.getElementById('sa-dir').value,
+    nombre:      nombreCompleto,
+    apellidos:   apellidos,
+    nombres:     nombres,
+    especialidad: especialidad,
+    direccion:   document.getElementById('sa-dir').value.trim(),
+    provincia:   document.getElementById('sa-provincia').value.trim(),
+    ciudad:      document.getElementById('sa-ciudad').value.trim(),
     tipo_medico: document.getElementById('sa-tipo').value,
-    motivo:      document.getElementById('sa-motivo').value
+    zona:        document.getElementById('sa-zona').value.trim(),
+    cedula:      document.getElementById('sa-cedula').value.trim(),
+    motivo:      document.getElementById('sa-motivo').value.trim()
   };
   var ok = await submitSolicitud('alta', data);
   if (ok) closeSolicitudAlta();
@@ -7413,6 +7470,7 @@ function selectCliente(id){
   document.getElementById('ped-cli-selected').style.display = '';
   document.getElementById('ped-cli-sel-name').textContent = c.razon_social || '';
   document.getElementById('ped-cli-sel-meta').textContent = [c.ruc, c.direccion, c.ciudad].filter(Boolean).join(' · ');
+  try { prefillCondicionesEspeciales(); } catch(e){ console.warn('prefill cond:', e); }
 }
 
 function toggleNewCliForm(){
@@ -7436,6 +7494,7 @@ function confirmarClienteManual(){
   document.getElementById('ped-cli-selected').style.display = '';
   document.getElementById('ped-cli-sel-name').textContent = razon;
   document.getElementById('ped-cli-sel-meta').textContent = [PED_ACTUAL.cliente.ruc, PED_ACTUAL.cliente.direccion, PED_ACTUAL.cliente.ciudad].filter(Boolean).join(' · ');
+  try { prefillCondicionesEspeciales(); } catch(e){ console.warn('prefill cond:', e); }
 }
 
 function clearPedCliente(){
@@ -7479,6 +7538,84 @@ function setItem(id, opts){
   else delete PED_ITEMS[id];
 }
 
+// Descuento ESTÁNDAR del producto según distribuidor (para calcular delta especial)
+function getStdDesc(p, dist){
+  if (!p) return 0;
+  if (dist==='directo')        return (p.desc_directo||0);
+  if (dist==='boticas_unidas') return (p.desc_buca||0);
+  if (dist==='difare')         return (p.desc_difare_total||0);
+  return 0;
+}
+// Busca la última condición especial ofrecida a este cliente en el mismo distribuidor
+// y la pre-carga en PED_ITEMS (solo productos donde el descuento fue > estándar)
+function prefillCondicionesEspeciales(){
+  if (!PED_ACTUAL || !PED_ACTUAL.cliente || !PED_ACTUAL.distribuidor) return;
+  var dist = PED_ACTUAL.distribuidor;
+  var cli = PED_ACTUAL.cliente;
+  var norm = function(s){ return (s||'').toString().toUpperCase().trim(); };
+  var ruc = norm(cli.ruc); var rz = norm(cli.razon_social);
+  // Filtrar pedidos del mismo rep, distribuidor, cliente (por ruc o razon_social)
+  var matches = (PEDIDOS_CACHE||[]).filter(function(x){
+    if (x.rep !== CU) return false;
+    if (x.distribuidor !== dist) return false;
+    if (x.estado === 'cancelado') return false;
+    var xruc = norm(x.ruc), xrz = norm(x.razon_social);
+    return (ruc && xruc === ruc) || (rz && xrz === rz);
+  });
+  if (!matches.length){ _renderCondicionesBanner(null); return; }
+  // Ordenar por fecha DESC (o created_at) y tomar el más reciente
+  matches.sort(function(a,b){
+    return (b.created_at||b.fecha||'').localeCompare(a.created_at||a.fecha||'');
+  });
+  var ultimo = matches[0];
+  var items = ultimo.items || [];
+  var specialCount = 0;
+  items.forEach(function(it){
+    var p = PRODUCTOS_CAT.find(function(x){ return x.id == it.producto_id; });
+    if (!p) return;
+    var stdD = getStdDesc(p, dist);
+    var itemD = Number(it.desc || 0);
+    // Solo pre-cargar los que tuvieron descuento MAYOR al estándar
+    if (itemD > stdD + 0.0001){
+      var cur = PED_ITEMS[it.producto_id] || {};
+      cur.desc = itemD;
+      // NO seteamos cantidad — el rep decide cantidades cada pedido
+      PED_ITEMS[it.producto_id] = cur;
+      specialCount++;
+    }
+  });
+  _renderCondicionesBanner({ fecha: ultimo.fecha, count: specialCount });
+  renderPedProductos();
+}
+function _renderCondicionesBanner(info){
+  var host = document.getElementById('ped-cond-banner');
+  if (!host){
+    // crear el banner debajo del cliente seleccionado
+    var sel = document.getElementById('ped-cli-selected');
+    if (!sel) return;
+    host = document.createElement('div');
+    host.id = 'ped-cond-banner';
+    host.style.cssText = 'margin-top:8px';
+    sel.parentNode.insertBefore(host, sel.nextSibling);
+  }
+  if (!info || !info.count){ host.innerHTML = ''; return; }
+  host.innerHTML = '<div style="padding:9px 12px;border:1px solid #F59E0B;background:#FEF3C7;border-radius:8px;font-size:12.5px;color:#92400E">'
+    + '<b>🔔 Última condición especial ofrecida (' + (info.fecha ? fmtShort(info.fecha) : '') + '):</b> '
+    + 'se pre-cargó descuento sobre estándar en <b>' + info.count + '</b> producto(s). Revísalos abajo — marcados en <span style="color:#B45309;font-weight:700">naranja</span>. '
+    + '<button onclick="resetCondicionesEspeciales()" style="margin-left:6px;padding:4px 9px;border-radius:5px;border:1px solid #B45309;background:#fff;color:#B45309;font-weight:700;font-size:11px;cursor:pointer;font-family:var(--f)">Restablecer a estándar</button>'
+    + '</div>';
+}
+function resetCondicionesEspeciales(){
+  Object.keys(PED_ITEMS).forEach(function(id){
+    var it = PED_ITEMS[id];
+    if (it && it.desc != null){ delete it.desc; }
+    if (!it.cant && it.desc==null) delete PED_ITEMS[id];
+  });
+  _renderCondicionesBanner(null);
+  renderPedProductos();
+  if (typeof showToast==='function') showToast('Condiciones restablecidas al estándar');
+}
+
 function renderPedProductos(){
   var el = document.getElementById('ped-prod-list');
   if (!el || !PED_ACTUAL || !PED_ACTUAL.distribuidor) return;
@@ -7500,12 +7637,23 @@ function renderPedProductos(){
     var aporte = dist==='difare' ? (d - (p.desc_difare_reconoce||0)) : null;
     var aporteHint = dist==='difare' ? '<span style="font-size:11px;color:'+(aporte<0?'#C0392B':'#856404')+';margin-left:8px">Reconoce '+fmtPct(p.desc_difare_reconoce||0)+' · Aporte lab. '+fmtPct(aporte||0)+'</span>' : '';
     var color = qty>0 ? '#1A5C3A' : '#9CA3AF';
+    // Delta especial: cuánto se ofrece sobre el descuento estándar
+    var stdD = getStdDesc(p, dist);
+    var delta = d - stdD;
+    var deltaBadge = '', inputBorder = '#cbd5d0', inputBg = '#fff';
+    if (delta > 0.0001){
+      var pts = (delta*100);
+      deltaBadge = '<span id="pp-delta-'+p.id+'" style="font-size:11px;font-weight:700;color:#fff;background:#F59E0B;padding:3px 8px;border-radius:5px;margin-left:4px;white-space:nowrap">+'+(pts.toFixed(2).replace(/\.?0+$/,''))+' pts extra vs std '+fmtPct(stdD)+'</span>';
+      inputBorder = '#F59E0B'; inputBg = '#FEF3C7';
+    } else {
+      deltaBadge = '<span id="pp-delta-'+p.id+'" style="display:none"></span>';
+    }
     return '<div style="padding:10px 11px;border-bottom:1px solid #eef2ef">' +
       '<div style="font-weight:600;font-size:12.5px;line-height:1.3;margin-bottom:6px">'+nombre+aporteHint+'</div>' +
       '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px">' +
         '<div style="min-width:88px"><span style="color:var(--t3)">P.V.F.</span> <b>'+fmtMoney(p.pvf)+'</b></div>' +
         '<div style="display:flex;align-items:center;gap:3px"><span style="color:var(--t3)">Desc.</span>' +
-          '<input type="number" min="0" max="100" step="0.1" value="'+(d*100).toFixed(2).replace(/\.?0+$/,'')+'" oninput="setDescPct('+p.id+',this.value)" style="width:60px;padding:4px 5px;border-radius:5px;border:1px solid #cbd5d0;text-align:right;font-family:var(--f);font-size:12px"><span>%</span></div>' +
+          '<input id="pp-dsc-'+p.id+'" type="number" min="0" max="100" step="0.1" value="'+(d*100).toFixed(2).replace(/\.?0+$/,'')+'" oninput="setDescPct('+p.id+',this.value)" style="width:60px;padding:4px 5px;border-radius:5px;border:1px solid '+inputBorder+';background:'+inputBg+';text-align:right;font-family:var(--f);font-size:12px;font-weight:'+(delta>0.0001?'700':'400')+'"><span>%</span>'+deltaBadge+'</div>' +
         '<div><span style="color:var(--t3)">Precio unit.</span> <b id="pp-unit-'+p.id+'">'+fmtMoney(pu)+'</b></div>' +
         '<div style="margin-left:auto;display:flex;align-items:center;gap:3px">' +
           '<button onclick="cambiarCant('+p.id+',-1)" type="button" style="width:28px;height:28px;border-radius:6px;border:1px solid #cbd5d0;background:#fff;color:var(--g);font-weight:700;cursor:pointer;font-size:15px;font-family:var(--f)">-</button>' +
@@ -7530,6 +7678,33 @@ function refreshRowVisual(id){
   var elTot  = document.getElementById('pp-total-'+id);
   if (elUnit) elUnit.textContent = fmtMoney(pu);
   if (elTot){ elTot.textContent = fmtMoney(subt); elTot.style.color = qty>0?'#1A5C3A':'#9CA3AF'; }
+  // Actualizar badge de delta + estilo del input
+  var dist = PED_ACTUAL && PED_ACTUAL.distribuidor;
+  var stdD = getStdDesc(p, dist);
+  var delta = d - stdD;
+  var elDelta = document.getElementById('pp-delta-'+id);
+  var elInput = document.getElementById('pp-dsc-'+id);
+  if (elDelta){
+    if (delta > 0.0001){
+      var pts = (delta*100);
+      elDelta.textContent = '+'+(pts.toFixed(2).replace(/\.?0+$/,''))+' pts extra vs std '+fmtPct(stdD);
+      elDelta.style.cssText = 'font-size:11px;font-weight:700;color:#fff;background:#F59E0B;padding:3px 8px;border-radius:5px;margin-left:4px;white-space:nowrap';
+    } else {
+      elDelta.style.display = 'none';
+      elDelta.textContent = '';
+    }
+  }
+  if (elInput){
+    if (delta > 0.0001){
+      elInput.style.borderColor = '#F59E0B';
+      elInput.style.background = '#FEF3C7';
+      elInput.style.fontWeight = '700';
+    } else {
+      elInput.style.borderColor = '#cbd5d0';
+      elInput.style.background = '#fff';
+      elInput.style.fontWeight = '400';
+    }
+  }
 }
 
 function setDescPct(id, val){
